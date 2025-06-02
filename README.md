@@ -2,6 +2,8 @@
 
 A TypeScript client library for interacting with the Convex DLT network.
 
+See: [Convex Docs](https://docs.convex.world)
+
 ## Installation
 
 ```bash
@@ -14,7 +16,7 @@ pnpm add convex-ts
 import { Convex } from 'convex-ts';
 
 // Connect to a Convex peer
-const convex = new Convex('https://convex.world');
+const convex = new Convex('https://peer.convex.live');
 
 // Create a new account with initial balance (on test network)
 await convex.createAccount(10000000);
