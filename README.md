@@ -11,19 +11,19 @@ pnpm add convex-ts
 ## Usage
 
 ```typescript
-import { ConvexClient } from 'convex-ts';
+import { Convex } from 'convex-ts';
 
 // Connect to a Convex peer
-const client = new ConvexClient('https://convex.world');
+const convex = new Convex('https://convex.world');
 
 // Create a new account with initial balance (on test network)
-await client.createAccount(10000000);
+await convex.createAccount(10000000);
 
 // Get account information
-const accountInfo = await client.getAccountInfo();
+const accountInfo = await convex.getAccountInfo();
 
 // Submit a transaction
-const result = await client.submitTransaction({
+const result = await convex.submitTransaction({
   // transaction details
 });
 ```
@@ -110,14 +110,14 @@ docker-compose up
 
 ## API Documentation
 
-### ConvexClient
+### Convex
 
 The main class for interacting with the Convex network.
 
 #### Constructor
 
 ```typescript
-new ConvexClient(peerUrl: string, options?: ClientOptions)
+new Convex(peerUrl: string, options?: ClientOptions)
 ```
 
 #### Methods

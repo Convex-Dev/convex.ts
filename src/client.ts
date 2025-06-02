@@ -10,15 +10,15 @@ import {
 } from './types';
 
 /**
- * Main client class for interacting with the Convex network
+ * Main class for interacting with the Convex network
  */
-export class ConvexClient {
+export class Convex {
   private readonly http: AxiosInstance;
   private keyPair?: KeyPair;
   private accountInfo?: AccountInfo;
 
   /**
-   * Create a new Convex client instance
+   * Create a new Convex instance
    * @param peerUrl The URL of the Convex peer to connect to
    * @param options Optional client configuration
    */

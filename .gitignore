@@ -36,6 +36,7 @@ pnpm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+*.tgz
 .cache/
 
 # Project specific
