@@ -36,6 +36,78 @@ const result = await client.submitTransaction({
 - Cryptographic key pair generation and management
 - Query state and history
 
+## Development
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [pnpm](https://pnpm.io/) (v8 or later)
+- Node.js (v16 or later)
+
+### Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build the library
+pnpm run build
+```
+
+### Running Tests
+
+The tests require a local Convex peer running in Docker. Follow these steps:
+
+1. Start Docker Desktop and ensure it's running
+
+2. Start the local Convex peer:
+```bash
+docker-compose up -d
+```
+
+3. Verify the peer is running:
+```bash
+# Check container status
+docker ps | grep convex-peer
+
+# Check API endpoint
+curl http://localhost:18888/api/v1/status
+```
+
+4. Run the tests:
+```bash
+# Run tests with local peer
+CONVEX_PEER_URL=http://localhost:18888 pnpm test
+```
+
+### Troubleshooting
+
+If you can't access the Convex peer:
+
+1. Check Docker container status:
+```bash
+docker-compose ps
+```
+
+2. Check container logs:
+```bash
+docker-compose logs
+```
+
+3. Ensure ports are properly exposed:
+```bash
+# Stop the container
+docker-compose down
+
+# Start with verbose output
+docker-compose up
+```
+
+4. If you still can't connect, try:
+   - Restarting Docker Desktop
+   - Running `docker-compose down` followed by `docker-compose up -d`
+   - Checking your firewall settings for ports 18888 and 18889
+
 ## API Documentation
 
 ### ConvexClient
@@ -55,19 +127,6 @@ new ConvexClient(peerUrl: string, options?: ClientOptions)
 - `submitTransaction(tx: Transaction): Promise<TransactionResult>`
 - `getKeyPair(): KeyPair`
 - `query(query: Query): Promise<QueryResult>`
-
-## Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Build the library
-pnpm run build
-
-# Run tests
-pnpm test
-```
 
 ## License
 

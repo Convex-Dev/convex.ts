@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  convex-peer:
+    image: convexlive/convex:latest
+    container_name: convex-peer
+    ports:
+      - "127.0.0.1:18888:18888"  # Peer API port
+      - "127.0.0.1:18889:18889"  # Admin API port
+    environment:
+      - CONVEX_PEER_PORT=18888
+      - CONVEX_ADMIN_PORT=18889
+      - CONVEX_NETWORK=test
+      - CONVEX_ALLOW_ORIGIN=*
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18888/api/v1/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - convex-net
+
+networks:
+  convex-net:
+    driver: bridge 
