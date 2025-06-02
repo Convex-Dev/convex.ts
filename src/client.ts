@@ -39,7 +39,7 @@ export class Convex {
    */
   async createAccount(initialBalance?: number): Promise<AccountInfo> {
     try {
-      const response = await this.http.post('/api/account/create', {
+      const response = await this.http.post('/api/v1/account/create', {
         initialBalance
       });
 
@@ -65,7 +65,7 @@ export class Convex {
     }
 
     try {
-      const response = await this.http.get(`/api/account/${this.accountInfo.address}`);
+      const response = await this.http.get(`/api/v1/account/${this.accountInfo.address}`);
       const accountInfo = response.data;
       
       if (!accountInfo) {
@@ -89,7 +89,7 @@ export class Convex {
     }
 
     try {
-      const response = await this.http.post('/api/transaction', {
+      const response = await this.http.post('/api/v1/transaction', {
         ...tx,
         from: this.accountInfo.address,
         sequence: tx.sequence || this.accountInfo.sequence
@@ -117,7 +117,7 @@ export class Convex {
    */
   async query(query: Query): Promise<QueryResult> {
     try {
-      const response = await this.http.post('/api/query', query);
+      const response = await this.http.post('/api/v1/query', query);
       return response.data;
     } catch (error) {
       throw this.handleError(error);
