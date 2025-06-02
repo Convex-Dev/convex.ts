@@ -4,9 +4,17 @@
   "description": "TypeScript client library for the Convex DLT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "pnpm clean && tsc",
+    "build": "pnpm clean && tsc && pnpm build:esm",
+    "build:esm": "tsc -p tsconfig.esm.json",
     "test": "jest",
     "prepare": "pnpm run build",
     "preinstall": "npx only-allow pnpm"
@@ -16,6 +24,7 @@
     "dlt",
     "blockchain",
     "typescript",
+    "javascript",
     "client"
   ],
   "author": "",

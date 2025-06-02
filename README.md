@@ -1,6 +1,6 @@
 # Convex TypeScript Client
 
-A TypeScript client library for interacting with the Convex DLT network.
+A TypeScript/JavaScript client library for interacting with the Convex DLT network.
 
 See: [Convex Docs](https://docs.convex.world)
 
@@ -12,11 +12,13 @@ pnpm add convex-ts
 
 ## Usage
 
+### TypeScript
+
 ```typescript
 import { Convex } from 'convex-ts';
 
 // Connect to a Convex peer
-const convex = new Convex('https://peer.convex.live');
+const convex = new Convex('https://convex.world');
 
 // Create a new account with initial balance (on test network)
 await convex.createAccount(10000000);
@@ -30,6 +32,31 @@ const result = await convex.submitTransaction({
 });
 ```
 
+### JavaScript (ESM)
+
+```javascript
+import { Convex } from 'convex-ts';
+
+// Connect to a Convex peer
+const convex = new Convex('https://convex.world');
+
+// Create a new account with initial balance (on test network)
+await convex.createAccount(10000000);
+```
+
+### JavaScript (CommonJS)
+
+```javascript
+const { Convex } = require('convex-ts');
+
+// Connect to a Convex peer
+const convex = new Convex('https://convex.world');
+
+// Create a new account with initial balance (on test network)
+convex.createAccount(10000000)
+  .then(account => console.log(account));
+```
+
 ## Features
 
 - Connect to Convex network peers
@@ -37,6 +64,8 @@ const result = await convex.submitTransaction({
 - Transaction submission and tracking
 - Cryptographic key pair generation and management
 - Query state and history
+- Full TypeScript type definitions
+- Supports both ESM and CommonJS
 
 ## Development
 
