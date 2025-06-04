@@ -58,12 +58,12 @@ pnpm login
 
 2. Publish the package:
 ```bash
-pnpm publish
+pnpm publish --access=public
 ```
 
 For a pre-release version, use:
 ```bash
-pnpm publish --tag next
+pnpm publish --tag next --access=public
 ```
 
 ## After Publishing
