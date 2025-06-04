@@ -1,5 +1,5 @@
 /**
- * Options for configuring the Convex client
+ * Client configuration options
  */
 export interface ClientOptions {
   /** Optional timeout in milliseconds for network requests */
@@ -9,11 +9,11 @@ export interface ClientOptions {
 }
 
 /**
- * Represents a cryptographic key pair
+ * Ed25519 key pair
  */
 export interface KeyPair {
-  publicKey: string;
   privateKey: string;
+  publicKey: string;
 }
 
 /**
@@ -23,21 +23,22 @@ export interface AccountInfo {
   address: string;
   balance: number;
   sequence: number;
+  publicKey: string;
 }
 
 /**
- * Transaction request
+ * Transaction parameters
  */
 export interface Transaction {
-  from: string;
+  from?: string;
   to?: string;
   amount?: number;
-  data?: any;
   sequence?: number;
+  data?: any;
 }
 
 /**
- * Result of a transaction submission
+ * Transaction result
  */
 export interface TransactionResult {
   hash: string;
@@ -51,7 +52,8 @@ export interface TransactionResult {
  */
 export interface Query {
   type: string;
-  params?: any;
+  address?: string;
+  data?: any;
 }
 
 /**
@@ -59,6 +61,6 @@ export interface Query {
  */
 export interface QueryResult {
   status: 'success' | 'error';
-  data?: any;
   error?: string;
+  result?: any;
 } 

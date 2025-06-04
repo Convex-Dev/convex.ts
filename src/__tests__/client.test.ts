@@ -4,7 +4,7 @@ import axios from 'axios';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-const CONVEX_PEER_URL = process.env.CONVEX_PEER_URL || 'https://convex.world';
+const CONVEX_PEER_URL = process.env.CONVEX_PEER_URL || 'http://peer.convex.live:8080';
 
 describe('Convex', () => {
   let client: Convex;

@@ -8,6 +8,7 @@ import {
   Query,
   QueryResult
 } from './types';
+import { generateKeyPair, sign, publicKeyToAddress } from './crypto';
 
 /**
  * Main class for interacting with the Convex network
@@ -39,11 +40,16 @@ export class Convex {
    */
   async createAccount(initialBalance?: number): Promise<AccountInfo> {
     try {
+      // Generate new key pair
+      this.keyPair = await generateKeyPair();
+      const address = publicKeyToAddress(this.keyPair.publicKey);
+
       const response = await this.http.post('/api/v1/account/create', {
+        address,
+        publicKey: this.keyPair.publicKey,
         initialBalance
       });
 
-      this.keyPair = response.data.keyPair;
       this.accountInfo = response.data.account;
 
       if (!this.accountInfo) {
@@ -89,10 +95,21 @@ export class Convex {
     }
 
     try {
-      const response = await this.http.post('/api/v1/transaction', {
+      // Prepare transaction data
+      const txData = {
         ...tx,
         from: this.accountInfo.address,
         sequence: tx.sequence || this.accountInfo.sequence
+      };
+
+      // Sign the transaction
+      const message = JSON.stringify(txData);
+      const signature = await sign(message, this.keyPair.privateKey);
+
+      // Submit signed transaction
+      const response = await this.http.post('/api/v1/transaction', {
+        ...txData,
+        signature
       });
 
       return response.data;
