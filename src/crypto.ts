@@ -43,13 +43,3 @@ export async function verify(
   
   return await ed.verify(signatureBytes, messageBytes, publicKeyBytes);
 }
-
-/**
- * Convert a public key to an address
- * @param publicKey Public key in hex format
- */
-export function publicKeyToAddress(publicKey: string): string {
-  // Simple address format: first 40 chars of public key
-  // You might want to add a checksum or different format based on Convex requirements
-  return publicKey.slice(0, 40);
-} 

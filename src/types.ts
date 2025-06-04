@@ -8,6 +8,8 @@ export interface ClientOptions {
   headers?: Record<string, string>;
 }
 
+export type Address = Uint8Array;
+
 /**
  * Ed25519 key pair
  */
@@ -51,16 +53,15 @@ export interface TransactionResult {
  * Query parameters
  */
 export interface Query {
-  type: string;
   address?: string;
-  data?: any;
+  source?: any;
 }
 
 /**
  * Query result
  */
-export interface QueryResult {
-  status: 'success' | 'error';
-  error?: string;
-  result?: any;
+export interface Result {
+  value: string;
+  errorCode?: string;
+  info?: any;
 } 

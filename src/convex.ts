@@ -6,9 +6,9 @@ import {
   Transaction,
   TransactionResult,
   Query,
-  QueryResult
+  Result
 } from './types';
-import { generateKeyPair, sign, publicKeyToAddress } from './crypto';
+import { generateKeyPair, sign } from './crypto';
 
 /**
  * Main class for interacting with the Convex network
@@ -17,6 +17,7 @@ export class Convex {
   private readonly http: AxiosInstance;
   private keyPair?: KeyPair;
   private accountInfo?: AccountInfo;
+  private address?: string
 
   /**
    * Create a new Convex instance
@@ -42,10 +43,9 @@ export class Convex {
     try {
       // Generate new key pair
       this.keyPair = await generateKeyPair();
-      const address = publicKeyToAddress(this.keyPair.publicKey);
 
       const response = await this.http.post('/api/v1/account/create', {
-        address,
+        address: this.address,
         publicKey: this.keyPair.publicKey,
         initialBalance
       });
@@ -132,7 +132,7 @@ export class Convex {
    * Execute a query on the network
    * @param query Query parameters
    */
-  async query(query: Query): Promise<QueryResult> {
+  async query(query: Query): Promise<Result> {
     try {
       const response = await this.http.post('/api/v1/query', query);
       return response.data;
