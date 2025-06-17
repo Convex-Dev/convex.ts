@@ -102,13 +102,13 @@ docker-compose up -d
 docker ps | grep convex-peer
 
 # Check API endpoint
-curl http://localhost:18888/api/v1/status
+curl http://localhost:8080/api/v1/status
 ```
 
 4. Run the tests:
 ```bash
 # Run tests with local peer
-CONVEX_PEER_URL=http://localhost:18888 pnpm test
+CONVEX_PEER_URL=http://localhost:8080 pnpm test
 ```
 
 ### Troubleshooting
