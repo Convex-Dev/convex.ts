@@ -1,13 +1,19 @@
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js'],
-  transform: {
-    '^.+\\.(ts|js)$': ['ts-jest', { useESM: true }]
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: './packages/convex-client/tsconfig.json',
+    },
   },
   transformIgnorePatterns: [
     'node_modules/(?!.*@noble/ed25519/)'
   ],
-  extensionsToTreatAsEsm: ['.ts']
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
 }; 

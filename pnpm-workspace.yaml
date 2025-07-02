@@ -1,2 +1,4 @@
-ignoredBuiltDependencies:
-  - convex-ts
+packages:
+  - packages/convex-client
+  - packages/convex-react
+  - packages/demo-site
