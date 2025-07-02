@@ -14,8 +14,8 @@ export type Address = Uint8Array;
  * Ed25519 key pair
  */
 export interface KeyPair {
-  privateKey: string;
-  publicKey: string;
+  privateKey: Uint8Array;
+  publicKey: Uint8Array;
 }
 
 /**

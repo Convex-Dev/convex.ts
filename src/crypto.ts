@@ -29,20 +29,19 @@ export async function generateKeyPair(): Promise<KeyPair> {
   const publicKey = await ed.getPublicKey(privateKey);
   
   return {
-    privateKey: bytesToHex(privateKey),
-    publicKey: bytesToHex(publicKey)
+    privateKey,
+    publicKey
   };
 }
 
 /**
  * Sign a message with a private key
  * @param message Message to sign
- * @param privateKey Private key in hex format
+ * @param privateKey Private key as Uint8Array
  */
-export async function sign(message: Hex, privateKey: string): Promise<string> {
-  const privateKeyBytes = hexToBytes(privateKey);
+export async function sign(message: Hex, privateKey: Uint8Array): Promise<string> {
   const messageBytes = typeof message === 'string' ? new TextEncoder().encode(message) : message;
-  const signature = await ed.sign(messageBytes, privateKeyBytes);
+  const signature = await ed.sign(messageBytes, privateKey);
   return bytesToHex(signature);
 }
 
@@ -50,16 +49,15 @@ export async function sign(message: Hex, privateKey: string): Promise<string> {
  * Verify a signature
  * @param message Original message
  * @param signature Signature in hex format
- * @param publicKey Public key in hex format
+ * @param publicKey Public key as Uint8Array
  */
 export async function verify(
   message: Hex,
   signature: Hex,
-  publicKey: Hex
+  publicKey: Uint8Array
 ): Promise<boolean> {
-  const publicKeyBytes = hexToBytes(publicKey);
   const signatureBytes = hexToBytes(signature);
   const messageBytes = typeof message === 'string' ? new TextEncoder().encode(message) : message;
   
-  return await ed.verify(signatureBytes, messageBytes, publicKeyBytes);
+  return await ed.verify(signatureBytes, messageBytes, publicKey);
 }
