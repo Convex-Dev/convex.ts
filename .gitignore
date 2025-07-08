@@ -10,8 +10,24 @@ lib/
 # Next.js
 .next/
 out/
-.next/
 *.next/
+.next/
+.next/out/
+.next/cache/
+.next/trace
+.next/types/
+.next/server/
+.next/static/
+.next/trace/
+.next/webpack/
+.next/swc/
+.next/turbopack/
+
+# Next.js specific files
+next-env.d.ts
+next.config.js
+next.config.mjs
+next.config.ts
 
 # TypeScript
 *.tsbuildinfo
@@ -48,3 +64,7 @@ pnpm-debug.log*
 # Project specific
 .turbo/ 
 packages/demo-site/.next/
+packages/demo-site/out/
+packages/demo-site/.next/cache/
+packages/demo-site/.next/trace/
+packages/demo-site/next-env.d.ts
