@@ -64,9 +64,10 @@ export default function Home() {
                   <label className="text-sm font-semibold text-secondary">Public Key</label>
                   <button 
                     onClick={() => copyToClipboard(publicKey)}
-                    className="text-xs text-primary hover:text-primary-dark transition-colors"
+                    className="copy-btn"
+                    title="Copy to clipboard"
                   >
-                    Copy
+                    <span className="material-symbols-outlined">content_copy</span>
                   </button>
                 </div>
                 <div className="bg-surface-light border border-border rounded-lg p-3">
@@ -80,9 +81,10 @@ export default function Home() {
                   <label className="text-sm font-semibold text-secondary">Private Key</label>
                   <button 
                     onClick={() => copyToClipboard(privateKey)}
-                    className="text-xs text-primary hover:text-primary-dark transition-colors"
+                    className="copy-btn"
+                    title="Copy to clipboard"
                   >
-                    Copy
+                    <span className="material-symbols-outlined">content_copy</span>
                   </button>
                 </div>
                 <div className="bg-surface-light border border-border rounded-lg p-3">
