@@ -47,4 +47,4 @@ pnpm-debug.log*
 
 # Project specific
 .turbo/ 
-packages/demo-site/.next/trace
+packages/demo-site/.next/
