@@ -62,6 +62,10 @@ export default function Home() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-secondary">Public Key</label>
+                  
+                </div>
+                <div className="bg-surface-light flex-row border border-border rounded-lg p-3">
+                  <code className="text-primary">{publicKey}</code>
                   <button 
                     onClick={() => copyToClipboard(publicKey)}
                     className="copy-btn"
@@ -70,15 +74,16 @@ export default function Home() {
                     <span className="material-symbols-outlined">content_copy</span>
                   </button>
                 </div>
-                <div className="bg-surface-light border border-border rounded-lg p-3">
-                  <code className="text-primary break-all">{publicKey}</code>
-                </div>
               </div>
 
               {/* Private Key */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-secondary">Private Key</label>
+            
+                </div>
+                <div className="bg-surface-light flex-row border border-border rounded-lg p-3">
+                  <code className="text-warning">{privateKey}</code>
                   <button 
                     onClick={() => copyToClipboard(privateKey)}
                     className="copy-btn"
@@ -86,9 +91,6 @@ export default function Home() {
                   >
                     <span className="material-symbols-outlined">content_copy</span>
                   </button>
-                </div>
-                <div className="bg-surface-light border border-border rounded-lg p-3">
-                  <code className="text-warning break-all">{privateKey}</code>
                 </div>
                 <p className="text-xs text-muted">
                   ⚠️ Keep your private key secure and never share it with anyone
