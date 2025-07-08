@@ -7,6 +7,12 @@ dist/
 build/
 lib/
 
+# Next.js
+.next/
+out/
+.next/
+*.next/
+
 # TypeScript
 *.tsbuildinfo
 
@@ -41,3 +47,4 @@ pnpm-debug.log*
 
 # Project specific
 .turbo/ 
+packages/demo-site/.next/trace
