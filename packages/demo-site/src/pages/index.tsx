@@ -60,15 +60,12 @@ export default function Home() {
             <div className="space-y-4 fade-in">
               {/* Public Key */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-secondary">Public Key</label>
-                  
-                </div>
-                <div className="bg-surface-light flex-row border border-border rounded-lg p-3">
-                  <code className="text-primary">{publicKey}</code>
+                <label className="text-sm font-semibold text-secondary">Public Key</label>
+                <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
+                  <code className="text-primary break-all flex-1 mr-3">{publicKey}</code>
                   <button 
                     onClick={() => copyToClipboard(publicKey)}
-                    className="copy-btn"
+                    className="copy-btn flex-shrink-0"
                     title="Copy to clipboard"
                   >
                     <span className="material-symbols-outlined">content_copy</span>
@@ -78,15 +75,12 @@ export default function Home() {
 
               {/* Private Key */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-secondary">Private Key</label>
-            
-                </div>
-                <div className="bg-surface-light flex-row border border-border rounded-lg p-3">
-                  <code className="text-warning">{privateKey}</code>
+                <label className="text-sm font-semibold text-secondary">Private Key</label>
+                <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
+                  <code className="text-warning break-all flex-1 mr-3">{privateKey}</code>
                   <button 
                     onClick={() => copyToClipboard(privateKey)}
-                    className="copy-btn"
+                    className="copy-btn flex-shrink-0"
                     title="Copy to clipboard"
                   >
                     <span className="material-symbols-outlined">content_copy</span>
