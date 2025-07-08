@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "pnpm -r build",
     "demo": "pnpm --filter @convex-world/demo-site dev",
     "test": "pnpm -r test"
   },
