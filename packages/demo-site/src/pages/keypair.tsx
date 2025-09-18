@@ -59,30 +59,32 @@ export default function KeyPairGeneratorPage() {
             </div>
 
             {publicKey && privateKey && (
-              <div className="space-y-4 fade-in">
+              <div className="fade-in" style={{ maxWidth: 720, margin: '0 auto', width: '100%' }}>
+                <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-secondary">Public Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
-                    <code className="text-primary break-all flex-1 mr-3">{publicKey}</code>
+                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
                     {publicKey && (
-                      <div className="flex items-center" style={{ gap: 8 }}>
-                        <Identicon data={publicKey} size={7} pixelSize={6} />
-                        <button 
-                          onClick={() => copyToClipboard(publicKey)}
-                          className="copy-btn flex-shrink-0"
-                          title="Copy to clipboard"
-                        >
-                          <span className="material-symbols-outlined">content_copy</span>
-                        </button>
-                      </div>
+                      <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32, marginRight: 8 }} />
                     )}
+                    <code className="text-primary break-all flex-1" style={{ textAlign: 'left' }}>{publicKey}</code>
+                    <div style={{ width: 12, marginLeft: 'auto' }} />
+                    <button 
+                      onClick={() => copyToClipboard(publicKey)}
+                      className="copy-btn flex-shrink-0"
+                      title="Copy to clipboard"
+                    >
+                      <span className="material-symbols-outlined">content_copy</span>
+                    </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-secondary">Private Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
-                    <code className="text-warning break-all flex-1 mr-3">{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
+                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
+                    <div style={{ width: 32, height: 32, marginRight: 8 }} />
+                    <code className="text-warning break-all flex-1" style={{ textAlign: 'left' }}>{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
+                    <div style={{ width: 12, marginLeft: 'auto' }} />
                     <div className="flex items-center" style={{ gap: 8 }}>
                       <button
                         onClick={() => setShowPrivate((v) => !v)}
@@ -104,6 +106,7 @@ export default function KeyPairGeneratorPage() {
                   <p className="text-xs text-muted">
                     ⚠️ Keep your private key secure and never share it with anyone
                   </p>
+                </div>
                 </div>
               </div>
             )}
