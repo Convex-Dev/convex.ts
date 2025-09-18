@@ -33,6 +33,17 @@ export default function KeyPairGeneratorPage() {
         if (pubKey) pubKeys[alias] = bytesToHex(pubKey);
       }
       setPublicKeys(pubKeys);
+
+      // Load unlocked keys from session storage
+      const unlockedKeys: Record<string, KeyPair | null> = {};
+      const unlockedAliases = instance.getUnlockedAliases();
+      for (const alias of unlockedAliases) {
+        const keyPair = instance.getUnlockedKeyPair(alias);
+        if (keyPair) {
+          unlockedKeys[alias] = keyPair;
+        }
+      }
+      setUnlocked(unlockedKeys);
     })();
   }, []);
 
@@ -91,10 +102,17 @@ export default function KeyPairGeneratorPage() {
     if (!ks) return;
     const pw = unlockPasswords[alias] || "";
     const kp = await ks.getKeyPair(alias, pw);
-    setUnlocked((m) => ({ ...m, [alias]: kp }));
+    if (kp) {
+      // Store in session storage
+      ks.storeUnlockedKeyPair(alias, kp);
+      setUnlocked((m) => ({ ...m, [alias]: kp }));
+    }
   };
 
   const handleLock = (alias: string) => {
+    if (!ks) return;
+    // Remove from session storage
+    ks.removeUnlockedKeyPair(alias);
     setUnlocked((m) => ({ ...m, [alias]: null }));
   };
 
@@ -103,6 +121,8 @@ export default function KeyPairGeneratorPage() {
     const confirmed = window.confirm(`Are you sure you want to remove the key "${alias}"? This action cannot be undone.`);
     if (confirmed) {
       await ks.deleteKeyPair(alias);
+      // Remove from session storage as well
+      ks.removeUnlockedKeyPair(alias);
       const { [alias]: _, ...rest } = unlocked;
       setUnlocked(rest);
       const { [alias]: __, ...restPw } = unlockPasswords;

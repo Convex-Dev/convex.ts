@@ -12,7 +12,7 @@ async function deriveAesGcmKey(password: string, salt: Uint8Array, iterations: n
     ['deriveKey']
   );
   return await subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as any, iterations, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -39,7 +39,7 @@ export async function encryptData(data: Uint8Array, password: string, iterations
   const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
   const key = await deriveAesGcmKey(password, salt, iterations);
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+  const encrypted = await subtle.encrypt({ name: 'AES-GCM', iv: iv as any }, key, data as any);
   return { salt, iv, ciphertext: new Uint8Array(encrypted), iterations };
 }
 
@@ -47,7 +47,7 @@ export async function encryptData(data: Uint8Array, password: string, iterations
 export async function decryptData(encryptedData: Uint8Array, iv: Uint8Array, password: string, salt: Uint8Array, iterations: number = 100_000): Promise<Uint8Array> {
   const subtle = getSubtleOrThrow();
   const key = await deriveAesGcmKey(password, salt, iterations);
-  const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv }, key, encryptedData);
+  const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv: iv as any }, key, encryptedData as any);
   return new Uint8Array(decrypted);
 }
 
@@ -70,6 +70,7 @@ type StoredRecord = {
 /** Browser LocalStorage-backed keystore */
 export class LocalStorageKeyStore extends KeyStore {
   private prefix = 'convex-keystore:';
+  private sessionPrefix = 'convex-unlocked:';
 
   async storeKeyPair(alias: string, keyPair: KeyPair, password: string): Promise<void> {
     const { iv, ciphertext, salt, iterations } = await encryptData(keyPair.privateKey, password);
@@ -125,6 +126,70 @@ export class LocalStorageKeyStore extends KeyStore {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Store an unlocked key pair in session storage
+   * @param alias The alias for the key pair
+   * @param keyPair The unlocked key pair to store
+   */
+  storeUnlockedKeyPair(alias: string, keyPair: KeyPair): void {
+    const data = {
+      publicKey: Array.from(keyPair.publicKey),
+      privateKey: Array.from(keyPair.privateKey),
+    };
+    sessionStorage.setItem(`${this.sessionPrefix}${alias}`, JSON.stringify(data));
+  }
+
+  /**
+   * Get an unlocked key pair from session storage
+   * @param alias The alias to look up
+   * @returns The unlocked key pair, or null if not found
+   */
+  getUnlockedKeyPair(alias: string): KeyPair | null {
+    const raw = sessionStorage.getItem(`${this.sessionPrefix}${alias}`);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        publicKey: new Uint8Array(parsed.publicKey),
+        privateKey: new Uint8Array(parsed.privateKey),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Remove an unlocked key pair from session storage
+   * @param alias The alias to remove
+   */
+  removeUnlockedKeyPair(alias: string): void {
+    sessionStorage.removeItem(`${this.sessionPrefix}${alias}`);
+  }
+
+  /**
+   * Get all unlocked key pair aliases from session storage
+   * @returns Array of aliases that are currently unlocked
+   */
+  getUnlockedAliases(): string[] {
+    const aliases: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith(this.sessionPrefix)) {
+        aliases.push(key.substring(this.sessionPrefix.length));
+      }
+    }
+    return aliases;
+  }
+
+  /**
+   * Clear all unlocked key pairs from session storage
+   */
+  clearUnlockedKeyPairs(): void {
+    const aliases = this.getUnlockedAliases();
+    aliases.forEach(alias => this.removeUnlockedKeyPair(alias));
   }
 }
 
