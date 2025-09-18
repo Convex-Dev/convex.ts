@@ -182,7 +182,7 @@ export default function KeyPairGeneratorPage() {
           {pwModalAlias && (
             <div role="dialog" aria-modal="true" aria-labelledby="unlock-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
               <div className="card" style={{ width: 360 }}>
-                <h3 id="unlock-title" className="mb-2">Unlock “{pwModalAlias}”</h3>
+                <h3 id="unlock-title" className="mb-2">Unlock "{pwModalAlias}"</h3>
                 <p className="text-secondary" style={{ marginBottom: 12 }}>Enter the password to unlock this key.</p>
                 <input
                   type="password"
@@ -209,6 +209,7 @@ export default function KeyPairGeneratorPage() {
               </div>
             </div>
           )}
+          
           {/* Header */}
           <header className="text-center mb-8 fade-in">
             <h1 className="mb-4">Keyring</h1>
@@ -217,114 +218,8 @@ export default function KeyPairGeneratorPage() {
             </p>
           </header>
 
-          {/* Generator */}
-          <div className="card w-full max-w-2xl fade-in">
-            <div className="text-center mb-6">
-              <h2 className="mb-2">Create New Keys</h2>
-              <p className="text-secondary">Click to generate a new public/private key pair.</p>
-            </div>
-
-            <div className="flex justify-center mb-6">
-              <button 
-                onClick={handleGenerate} 
-                disabled={loading}
-                className={`btn btn-primary ${loading ? 'pulse' : ''}`}
-              >
-                {loading ? "Generating Key Pair..." : "Generate New Key Pair"}
-              </button>
-            </div>
-
-            {publicKey && privateKey && (
-              <div className="fade-in" style={{ maxWidth: 720, margin: '0 auto', width: '100%' }}>
-                <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Public Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
-                    {publicKey && (
-                      <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32, marginRight: 8 }} />
-                    )}
-                    <code className="text-primary break-all flex-1" style={{ textAlign: 'left' }}>{publicKey}</code>
-                    <div style={{ width: 12, marginLeft: 'auto' }} />
-                    <button 
-                      onClick={() => copyToClipboard(publicKey)}
-                      className="copy-btn flex-shrink-0"
-                      title="Copy to clipboard"
-                    >
-                      <span className="material-symbols-outlined">content_copy</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Private Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
-                    <div style={{ width: 32, height: 32, marginRight: 8 }} />
-                    <code className="text-warning break-all flex-1" style={{ textAlign: 'left' }}>{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
-                    <div style={{ width: 12, marginLeft: 'auto' }} />
-                    <div className="flex items-center" style={{ gap: 8 }}>
-                      <button
-                        onClick={() => setShowPrivate((v) => !v)}
-                        className="copy-btn flex-shrink-0"
-                        title={showPrivate ? "Hide private key" : "Show private key"}
-                        aria-pressed={showPrivate}
-                      >
-                        <span className="material-symbols-outlined">{showPrivate ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                      <button 
-                        onClick={() => copyToClipboard(privateKey)}
-                        className="copy-btn flex-shrink-0"
-                        title="Copy to clipboard"
-                      >
-                        <span className="material-symbols-outlined">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted">
-                    ⚠️ Keep your private key secure and never share it with anyone
-                  </p>
-                </div>
-
-                {/* Save to keystore */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Add to Key Store</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3">
-                    <div className="grid" style={{ gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
-                      <input
-                        type="text"
-                        placeholder="Alias (e.g., alice)"
-                        value={newAlias}
-                        onChange={(e) => setNewAlias(e.target.value)}
-                        className="input"
-                      />
-                      <div className="space-y-1">
-                        <input
-                          type="password"
-                          placeholder="Password (optional)"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="input"
-                        />
-                        {!newPassword && (
-                          <div className="text-xs text-warning">⚠️ WARNING: password is blank</div>
-                        )}
-                      </div>
-                      <button
-                        onClick={handleAddToKeyStore}
-                        className="btn btn-primary"
-                        disabled={!newAlias}
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Keyring Management */}
-          <div className="card w-full max-w-3xl fade-in" style={{ marginTop: 24 }}>
+          {/* Keyring Management - At the top */}
+          <div className="card w-full max-w-3xl fade-in" style={{ marginBottom: 24 }}>
             <div className="text-center mb-6">
               <h2 className="mb-2">Your Keyring</h2>
               <p className="text-secondary">Keys stored locally in your browser.</p>
@@ -348,7 +243,7 @@ export default function KeyPairGeneratorPage() {
                 <div className="font-semibold text-sm text-secondary" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Status</div>
                 <div className="font-semibold text-sm text-secondary" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Actions</div>
                 <div className="font-semibold text-sm text-secondary text-center" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Remove</div>
-                
+
                 {/* Data rows */}
                 {aliases.map((alias) => {
                   const kp = unlocked[alias];
@@ -458,7 +353,7 @@ export default function KeyPairGeneratorPage() {
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = '#ef4444';
+                            e.currentTarget.style.color = '#faa';
                           }}
                         >
                           🗑
@@ -471,6 +366,112 @@ export default function KeyPairGeneratorPage() {
             )}
           </div>
 
+          {/* Key Generator - Below the keyring */}
+          <div className="card w-full max-w-2xl fade-in">
+            <div className="text-center mb-6">
+              <h2 className="mb-2">Create New Keys</h2>
+              <p className="text-secondary">Click to generate a new public/private key pair.</p>
+            </div>
+
+            <div className="flex justify-center mb-6">
+              <button 
+                onClick={handleGenerate} 
+                disabled={loading}
+                className={`btn btn-primary ${loading ? 'pulse' : ''}`}
+              >
+                {loading ? "Generating Key Pair..." : "Generate New Key Pair"}
+              </button>
+            </div>
+
+            {publicKey && privateKey && (
+              <div className="fade-in" style={{ maxWidth: 720, margin: '0 auto', width: '100%' }}>
+                <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-secondary">Public Key</label>
+                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
+                    {publicKey && (
+                      <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32, marginRight: 8 }} />
+                    )}
+                    <code className="text-primary break-all flex-1" style={{ textAlign: 'left' }}>{publicKey}</code>
+                    <div style={{ width: 12, marginLeft: 'auto' }} />
+                    <button 
+                      onClick={() => copyToClipboard(publicKey)}
+                      className="copy-btn flex-shrink-0"
+                      title="Copy to clipboard"
+                    >
+                      <span className="material-symbols-outlined">content_copy</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-secondary">Private Key</label>
+                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
+                    <div style={{ width: 32, height: 32, marginRight: 8 }} />
+                    <code className="text-warning break-all flex-1" style={{ textAlign: 'left' }}>{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
+                    <div style={{ width: 12, marginLeft: 'auto' }} />
+                    <div className="flex items-center" style={{ gap: 8 }}>
+                      <button
+                        onClick={() => setShowPrivate((v) => !v)}
+                        className="copy-btn flex-shrink-0"
+                        title={showPrivate ? "Hide private key" : "Show private key"}
+                        aria-pressed={showPrivate}
+                      >
+                        <span className="material-symbols-outlined">{showPrivate ? 'visibility_off' : 'visibility'}</span>
+                      </button>
+                      <button 
+                        onClick={() => copyToClipboard(privateKey)}
+                        className="copy-btn flex-shrink-0"
+                        title="Copy to clipboard"
+                      >
+                        <span className="material-symbols-outlined">content_copy</span>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted">
+                    ⚠️ Keep your private key secure and never share it with anyone
+                  </p>
+                </div>
+
+                {/* Save to keystore */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-secondary">Add to Key Store</label>
+                  <div className="bg-surface-light border border-border rounded-lg p-3">
+                    <div className="grid" style={{ gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
+                      <input
+                        type="text"
+                        placeholder="Alias (e.g., alice)"
+                        value={newAlias}
+                        onChange={(e) => setNewAlias(e.target.value)}
+                        className="input"
+                      />
+                      <div className="space-y-1">
+                        <input
+                          type="password"
+                          placeholder="Password (optional)"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="input"
+                        />
+                        {!newPassword && (
+                          <div className="text-xs text-warning">⚠️ WARNING: password is blank</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleAddToKeyStore}
+                        className="btn btn-primary"
+                        disabled={!newAlias}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <footer className="text-center mt-8 text-secondary text-sm">
             <a href="/" className="btn btn-secondary">← Back to Home</a>
           </footer>
@@ -479,5 +480,3 @@ export default function KeyPairGeneratorPage() {
     </>
   );
 }
-
-
