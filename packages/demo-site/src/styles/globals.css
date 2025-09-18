@@ -292,6 +292,13 @@ pre code {
   transform: translateY(-2px);
 }
 
+/* Disable hover effects for static cards */
+.card.card-static:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+  transform: none;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;

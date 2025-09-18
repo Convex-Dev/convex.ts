@@ -1,20 +1,24 @@
 export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.ts'],
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/(crypto|keystore).test.ts'],
   moduleFileExtensions: ['ts', 'js'],
   extensionsToTreatAsEsm: ['.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
       useESM: true,
-      tsconfig: './packages/convex-client/tsconfig.json',
-    },
+      tsconfig: '<rootDir>/tsconfig.json',
+      transpilation: true,
+    }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!.*@noble/ed25519/)'
+    'node_modules/(?!(@noble|@convex-world)/)'
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-}; 
+};
+
+

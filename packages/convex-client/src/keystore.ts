@@ -1,0 +1,115 @@
+import { KeyPair } from './types.js';
+
+/** Derive an AES-GCM key from a password and salt using PBKDF2 */
+async function deriveAesGcmKey(password: string, salt: Uint8Array, iterations: number = 100_000): Promise<CryptoKey> {
+  const subtle = getSubtleOrThrow();
+  const enc = new TextEncoder();
+  const keyMaterial = await subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  return await subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function getSubtleOrThrow(): SubtleCrypto {
+  const subtle = (globalThis.crypto && globalThis.crypto.subtle) || (globalThis as any).msCrypto?.subtle;
+  if (!subtle) throw new Error('Web Crypto API not available: crypto.subtle is undefined');
+  return subtle;
+}
+
+export type EncryptedPayload = {
+  salt: Uint8Array;
+  iv: Uint8Array;
+  ciphertext: Uint8Array;
+  iterations?: number;
+};
+
+/** Encrypt data with AES-GCM using password-derived key */
+export async function encryptData(data: Uint8Array, password: string, iterations: number = 100_000): Promise<EncryptedPayload> {
+  const subtle = getSubtleOrThrow();
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveAesGcmKey(password, salt, iterations);
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+  return { salt, iv, ciphertext: new Uint8Array(encrypted), iterations };
+}
+
+/** Decrypt data with AES-GCM using password-derived key */
+export async function decryptData(encryptedData: Uint8Array, iv: Uint8Array, password: string, salt: Uint8Array, iterations: number = 100_000): Promise<Uint8Array> {
+  const subtle = getSubtleOrThrow();
+  const key = await deriveAesGcmKey(password, salt, iterations);
+  const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv }, key, encryptedData);
+  return new Uint8Array(decrypted);
+}
+
+/** Abstract keystore API */
+export abstract class KeyStore {
+  abstract storeKeyPair(alias: string, keyPair: KeyPair, password: string): Promise<void>;
+  abstract getKeyPair(alias: string, password: string): Promise<KeyPair | null>;
+  abstract listAliases(): Promise<string[]>;
+  abstract deleteKeyPair(alias: string): Promise<void>;
+}
+
+type StoredRecord = {
+  publicKey: number[];
+  iv: number[];
+  salt: number[];
+  encryptedPrivateKey: number[];
+  iterations?: number;
+};
+
+/** Browser LocalStorage-backed keystore */
+export class LocalStorageKeyStore extends KeyStore {
+  private prefix = 'convex-keystore:';
+
+  async storeKeyPair(alias: string, keyPair: KeyPair, password: string): Promise<void> {
+    const { iv, ciphertext, salt, iterations } = await encryptData(keyPair.privateKey, password);
+    const data: StoredRecord = {
+      publicKey: Array.from(keyPair.publicKey),
+      iv: Array.from(iv),
+      salt: Array.from(salt),
+      encryptedPrivateKey: Array.from(ciphertext),
+      iterations,
+    };
+    localStorage.setItem(`${this.prefix}${alias}`, JSON.stringify(data));
+  }
+
+  async getKeyPair(alias: string, password: string): Promise<KeyPair | null> {
+    const raw = localStorage.getItem(`${this.prefix}${alias}`);
+    if (!raw) return null;
+    const parsed: StoredRecord = JSON.parse(raw);
+    const { publicKey, iv, salt, encryptedPrivateKey, iterations } = parsed;
+    try {
+      const priv = await decryptData(new Uint8Array(encryptedPrivateKey), new Uint8Array(iv), password, new Uint8Array(salt), iterations ?? 100_000);
+      return { publicKey: new Uint8Array(publicKey), privateKey: priv };
+    } catch (e) {
+      console.error('Decryption failed:', e);
+      return null;
+    }
+  }
+
+  async listAliases(): Promise<string[]> {
+    const aliases: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith(this.prefix)) aliases.push(key.substring(this.prefix.length));
+    }
+    return aliases;
+  }
+
+  async deleteKeyPair(alias: string): Promise<void> {
+    localStorage.removeItem(`${this.prefix}${alias}`);
+  }
+}
+
+

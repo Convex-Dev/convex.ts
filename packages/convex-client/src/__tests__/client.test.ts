@@ -1,7 +1,14 @@
 import { Convex } from '../convex.js';
 import axios from 'axios';
 
-jest.mock('axios');
+import { jest } from '@jest/globals';
+
+jest.mock('axios', () => ({
+  create: jest.fn(),
+  default: {
+    create: jest.fn(),
+  }
+}));
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Create a mock AxiosInstance, as returned by mocked axios.create()
@@ -22,7 +29,7 @@ describe('Convex', () => {
     mockAxiosInstance.get.mockReset();
 
     // Make axios.create() return our mock AxiosInstance
-    mockedAxios.create.mockReturnValue(mockAxiosInstance);
+    (mockedAxios.create as any).mockReturnValue(mockAxiosInstance);
     client = new Convex(CONVEX_PEER_URL);
   });
 
