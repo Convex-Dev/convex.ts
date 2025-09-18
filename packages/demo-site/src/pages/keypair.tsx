@@ -18,7 +18,8 @@ export default function KeyPairGeneratorPage() {
   // Inputs for saving/unlocking
   const [newAlias, setNewAlias] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [unlockPasswords, setUnlockPasswords] = useState<Record<string, string>>({});
+  const [pwModalAlias, setPwModalAlias] = useState<string | null>(null);
+  const [pwModalValue, setPwModalValue] = useState<string>("");
 
   React.useEffect(() => {
     // Instantiate keystore in browser only
@@ -98,14 +99,21 @@ export default function KeyPairGeneratorPage() {
     }
   };
 
-  const handleUnlock = async (alias: string) => {
+  const handleUnlock = async (alias: string, password?: string) => {
     if (!ks) return;
-    const pw = unlockPasswords[alias] || "";
+    const pw = password ?? "";
     const kp = await ks.getKeyPair(alias, pw);
     if (kp) {
       // Store in session storage
       ks.storeUnlockedKeyPair(alias, kp);
       setUnlocked((m) => ({ ...m, [alias]: kp }));
+    } else {
+      // Ensure remains locked and any stale session entry is cleared
+      ks.removeUnlockedKeyPair(alias);
+      setUnlocked((m) => ({ ...m, [alias]: null }));
+      if (typeof window !== 'undefined') {
+        window.alert('Incorrect password');
+      }
     }
   };
 
@@ -114,6 +122,18 @@ export default function KeyPairGeneratorPage() {
     // Remove from session storage
     ks.removeUnlockedKeyPair(alias);
     setUnlocked((m) => ({ ...m, [alias]: null }));
+  };
+
+  const toggleLock = async (alias: string) => {
+    const isUnlocked = !!unlocked[alias];
+    if (isUnlocked) {
+      handleLock(alias);
+      return;
+    }
+    // Locked → require password via modal
+    setPwModalAlias(alias);
+    setPwModalValue("");
+    return;
   };
 
   const handleRemove = async (alias: string) => {
@@ -125,8 +145,7 @@ export default function KeyPairGeneratorPage() {
       ks.removeUnlockedKeyPair(alias);
       const { [alias]: _, ...rest } = unlocked;
       setUnlocked(rest);
-      const { [alias]: __, ...restPw } = unlockPasswords;
-      setUnlockPasswords(restPw);
+      // no password state to clear
       const { [alias]: ___, ...restPub } = publicKeys;
       setPublicKeys(restPub);
       await refreshAliases();
@@ -160,6 +179,36 @@ export default function KeyPairGeneratorPage() {
       </Head>
       <div className="container">
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          {pwModalAlias && (
+            <div role="dialog" aria-modal="true" aria-labelledby="unlock-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+              <div className="card" style={{ width: 360 }}>
+                <h3 id="unlock-title" className="mb-2">Unlock “{pwModalAlias}”</h3>
+                <p className="text-secondary" style={{ marginBottom: 12 }}>Enter the password to unlock this key.</p>
+                <input
+                  type="password"
+                  autoFocus
+                  value={pwModalValue}
+                  onChange={(e) => setPwModalValue(e.target.value)}
+                  className="input"
+                  placeholder="Password"
+                  autoComplete="off"
+                />
+                <div className="flex" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+                  <button className="btn btn-secondary" onClick={() => { setPwModalAlias(null); setPwModalValue(""); }}>Cancel</button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      if (!pwModalAlias) return;
+                  const alias = pwModalAlias;
+                      setPwModalAlias(null);
+                      setPwModalValue("");
+                  await handleUnlock(alias, pwModalValue);
+                    }}
+                  >Unlock</button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Header */}
           <header className="text-center mb-8 fade-in">
             <h1 className="mb-4">Keyring</h1>
@@ -286,108 +335,138 @@ export default function KeyPairGeneratorPage() {
             )}
 
             {!!aliases.length && (
-              <div>
+              <div className="grid" style={{ 
+                display: 'grid',
+                gridTemplateColumns: '2fr auto auto auto', 
+                alignItems: 'center',
+                backgroundColor: 'var(--surface-light)',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
                 {/* Header */}
-                <div className="grid items-center" style={{ 
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 2fr auto', 
-                  gap: '16px', 
-                  padding: '12px 16px', 
-                  borderBottom: '2px solid var(--border)', 
-                  marginBottom: '16px',
-                  backgroundColor: 'var(--surface-light)',
-                  borderRadius: '8px 8px 0 0'
-                }}>
-                  <div className="font-semibold text-sm text-secondary">Alias</div>
-                  <div className="font-semibold text-sm text-secondary">Status</div>
-                  <div className="font-semibold text-sm text-secondary">Actions</div>
-                  <div className="font-semibold text-sm text-secondary text-center">Remove</div>
-                </div>
+                <div className="font-semibold text-sm text-secondary" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Alias</div>
+                <div className="font-semibold text-sm text-secondary" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Status</div>
+                <div className="font-semibold text-sm text-secondary" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Actions</div>
+                <div className="font-semibold text-sm text-secondary text-center" style={{ padding: '12px 16px', borderBottom: '2px solid var(--border)' }}>Remove</div>
+                
                 {/* Data rows */}
-                <div className="space-y-2">
-                  {aliases.map((alias) => {
-                    const kp = unlocked[alias];
-                    const isUnlocked = !!kp;
-                    const pubHex = publicKeys[alias] || (isUnlocked ? bytesToHex(kp!.publicKey) : undefined);
-                    return (
-                      <div key={alias} className="grid items-center" style={{ 
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 2fr auto', 
-                        gap: '16px', 
+                {aliases.map((alias) => {
+                  const kp = unlocked[alias];
+                  const isUnlocked = !!kp;
+                  const pubHex = publicKeys[alias] || (isUnlocked ? bytesToHex(kp!.publicKey) : undefined);
+                  return (
+                    <React.Fragment key={alias}>
+                      <div style={{ 
+                        minWidth: 0, 
                         padding: '12px 16px', 
-                        borderBottom: '1px solid var(--border)',
-                        backgroundColor: 'var(--surface)',
-                        borderRadius: '4px'
+                        display: 'flex',
+                        alignItems: 'center',
+                        minHeight: '48px'
                       }}>
-                        <div style={{ minWidth: 0 }}>
-                          <button
-                            type="button"
-                            onClick={() => copyPublic(alias, pubHex)}
-                            className="flex items-center"
-                            style={{ gap: 8, marginBottom: 4, cursor: pubHex ? 'pointer' : 'default', background: 'transparent', border: 0, padding: 0 }}
-                            title={pubHex ? `Copy public key ${(pubHex.startsWith('0x') ? pubHex : '0x' + pubHex).slice(0, 12)}…` : undefined}
-                            aria-label={pubHex ? `Copy public key for ${alias}` : `No public key for ${alias}`}
-                          >
-                            {pubHex ? (
-                              <Identicon data={pubHex} size={7} pixelSize={6} style={{ width: 28, height: 28 }} />
-                            ) : (
-                              <div style={{ width: 28, height: 28 }} />
-                            )}
-                            <strong className={`text-primary ${pubHex ? 'hover:underline' : ''}`}>{alias}</strong>
-                          </button>
-                        </div>
-                      <div>
-                        <span className={`tag ${isUnlocked ? 'tag-success' : 'tag-warning'}`}>{isUnlocked ? 'Unlocked' : 'Locked'}</span>
+                        <button
+                          type="button"
+                          onClick={() => copyPublic(alias, pubHex)}
+                          className="flex items-center"
+                          style={{ gap: 8, cursor: pubHex ? 'pointer' : 'default', background: 'transparent', border: 0, padding: 0 }}
+                          title={pubHex ? `Copy public key ${(pubHex.startsWith('0x') ? pubHex : '0x' + pubHex).slice(0, 12)}…` : undefined}
+                          aria-label={pubHex ? `Copy public key for ${alias}` : `No public key for ${alias}`}
+                        >
+                          {pubHex ? (
+                            <Identicon data={pubHex} size={7} pixelSize={6} style={{ width: 28, height: 28 }} />
+                          ) : (
+                            <div style={{ width: 28, height: 28 }} />
+                          )}
+                          <strong className={`text-primary ${pubHex ? 'hover:underline' : ''}`}>{alias}</strong>
+                        </button>
                       </div>
-                        <div>
-                          {!isUnlocked && (
-                            <div className="flex items-center" style={{ gap: 8 }}>
-                              <input
-                                type="password"
-                                placeholder="Password"
-                                value={unlockPasswords[alias] || ''}
-                                onChange={(e) => setUnlockPasswords((m) => ({ ...m, [alias]: e.target.value }))}
-                                className="input"
-                                style={{ width: 150 }}
-                              />
-                              <button className="btn btn-primary" onClick={() => handleUnlock(alias)}>Unlock</button>
-                            </div>
-                          )}
-                          {isUnlocked && (
-                            <button className="btn btn-secondary" onClick={() => handleLock(alias)}>Lock</button>
-                          )}
-                        </div>
-                        <div className="text-center">
+                      
+                      <div 
+                        className="text-center"
+                        title={isUnlocked ? 'Click to lock' : 'Click to unlock'}
+                        aria-label={isUnlocked ? 'Click to lock' : 'Click to unlock'}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleLock(alias)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLock(alias); } }}
+                        style={{ 
+                          cursor: 'pointer', 
+                          padding: '12px 16px', 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minHeight: '48px'
+                        }}
+                      >
+                        <span style={{ fontSize: 24 }}>{isUnlocked ? '🔑' : '🔒'}</span>
+                      </div>
+                      
+                      <div style={{ 
+                        padding: '12px 16px', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '48px'
+                      }}>
+                        {!isUnlocked && (
                           <button 
-                            onClick={() => handleRemove(alias)}
-                            title={`Remove ${alias}`}
-                            style={{ 
-                              background: 'transparent',
-                              border: '1px solid #ef4444',
-                              color: '#ef4444',
-                              borderRadius: '6px',
-                              padding: '6px 8px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              minWidth: 'auto',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = '#ef4444';
-                              e.currentTarget.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = '#ef4444';
-                            }}
+                            className="btn btn-primary" 
+                            onClick={() => toggleLock(alias)}
+                            style={{ height: '36px', minWidth: '80px' }}
                           >
-                            🗑
+                            Unlock
                           </button>
-                        </div>
+                        )}
+                        {isUnlocked && (
+                          <button 
+                            className="btn btn-secondary" 
+                            onClick={() => handleLock(alias)}
+                            style={{ height: '36px', minWidth: '80px' }}
+                          >
+                            Lock
+                          </button>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                      
+                      <div className="text-center" style={{ 
+                        padding: '12px 16px', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '48px'
+                      }}>
+                        <button 
+                          onClick={() => handleRemove(alias)}
+                          title={`Remove ${alias}`}
+                          style={{ 
+                            background: 'transparent',
+                            border: '1px solid #ef4444',
+                            color: '#faa',
+                            borderRadius: '6px',
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            fontSize: '24px',
+                            minWidth: 'auto',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#ef4444';
+                            e.currentTarget.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#ef4444';
+                          }}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
           </div>
