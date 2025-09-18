@@ -100,14 +100,17 @@ export default function KeyPairGeneratorPage() {
 
   const handleRemove = async (alias: string) => {
     if (!ks) return;
-    await ks.deleteKeyPair(alias);
-    const { [alias]: _, ...rest } = unlocked;
-    setUnlocked(rest);
-    const { [alias]: __, ...restPw } = unlockPasswords;
-    setUnlockPasswords(restPw);
-    const { [alias]: ___, ...restPub } = publicKeys;
-    setPublicKeys(restPub);
-    await refreshAliases();
+    const confirmed = window.confirm(`Are you sure you want to remove the key "${alias}"? This action cannot be undone.`);
+    if (confirmed) {
+      await ks.deleteKeyPair(alias);
+      const { [alias]: _, ...rest } = unlocked;
+      setUnlocked(rest);
+      const { [alias]: __, ...restPw } = unlockPasswords;
+      setUnlockPasswords(restPw);
+      const { [alias]: ___, ...restPub } = publicKeys;
+      setPublicKeys(restPub);
+      await refreshAliases();
+    }
   };
 
   function hexToUint8(hex: string): Uint8Array {
@@ -118,6 +121,13 @@ export default function KeyPairGeneratorPage() {
     }
     return bytes;
   }
+
+  const copyPublic = async (alias: string, pubHex?: string) => {
+    if (!pubHex) return;
+    try {
+      await navigator.clipboard.writeText(pubHex.startsWith('0x') ? pubHex : `0x${pubHex}`);
+    } catch {}
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -260,7 +270,7 @@ export default function KeyPairGeneratorPage() {
                 {/* Header */}
                 <div className="grid items-center" style={{ 
                   display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 2fr 1fr', 
+                  gridTemplateColumns: '2fr 1fr 2fr auto', 
                   gap: '16px', 
                   padding: '12px 16px', 
                   borderBottom: '2px solid var(--border)', 
@@ -271,7 +281,7 @@ export default function KeyPairGeneratorPage() {
                   <div className="font-semibold text-sm text-secondary">Alias</div>
                   <div className="font-semibold text-sm text-secondary">Status</div>
                   <div className="font-semibold text-sm text-secondary">Actions</div>
-                  <div className="font-semibold text-sm text-secondary">Remove</div>
+                  <div className="font-semibold text-sm text-secondary text-center">Remove</div>
                 </div>
                 {/* Data rows */}
                 <div className="space-y-2">
@@ -282,7 +292,7 @@ export default function KeyPairGeneratorPage() {
                     return (
                       <div key={alias} className="grid items-center" style={{ 
                         display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 2fr 1fr', 
+                        gridTemplateColumns: '2fr 1fr 2fr auto', 
                         gap: '16px', 
                         padding: '12px 16px', 
                         borderBottom: '1px solid var(--border)',
@@ -290,21 +300,24 @@ export default function KeyPairGeneratorPage() {
                         borderRadius: '4px'
                       }}>
                         <div style={{ minWidth: 0 }}>
-                          <div className="flex items-center" style={{ gap: 8, marginBottom: 4 }}>
+                          <button
+                            type="button"
+                            onClick={() => copyPublic(alias, pubHex)}
+                            className="flex items-center"
+                            style={{ gap: 8, marginBottom: 4, cursor: pubHex ? 'pointer' : 'default', background: 'transparent', border: 0, padding: 0 }}
+                            title={pubHex ? `Copy public key ${(pubHex.startsWith('0x') ? pubHex : '0x' + pubHex).slice(0, 12)}…` : undefined}
+                            aria-label={pubHex ? `Copy public key for ${alias}` : `No public key for ${alias}`}
+                          >
                             {pubHex ? (
                               <Identicon data={pubHex} size={7} pixelSize={6} style={{ width: 28, height: 28 }} />
                             ) : (
                               <div style={{ width: 28, height: 28 }} />
                             )}
-                            <strong>{alias}</strong>
-                          </div>
-                          {pubHex && (
-                            <div className="text-xs break-all text-secondary">{pubHex}</div>
-                          )}
+                            <strong className={`text-primary ${pubHex ? 'hover:underline' : ''}`}>{alias}</strong>
+                          </button>
                         </div>
                       <div>
                         <span className={`tag ${isUnlocked ? 'tag-success' : 'tag-warning'}`}>{isUnlocked ? 'Unlocked' : 'Locked'}</span>
-                        {!pubHex && <div className="text-2xs text-muted" style={{ marginTop: 4 }}>No public key</div>}
                       </div>
                         <div>
                           {!isUnlocked && (
@@ -324,8 +337,32 @@ export default function KeyPairGeneratorPage() {
                             <button className="btn btn-secondary" onClick={() => handleLock(alias)}>Lock</button>
                           )}
                         </div>
-                        <div>
-                          <button className="btn btn-danger" onClick={() => handleRemove(alias)}>Remove</button>
+                        <div className="text-center">
+                          <button 
+                            onClick={() => handleRemove(alias)}
+                            title={`Remove ${alias}`}
+                            style={{ 
+                              background: 'transparent',
+                              border: '1px solid #ef4444',
+                              color: '#ef4444',
+                              borderRadius: '6px',
+                              padding: '6px 8px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              minWidth: 'auto',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#ef4444';
+                              e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = '#ef4444';
+                            }}
+                          >
+                            🗑
+                          </button>
                         </div>
                       </div>
                     );
