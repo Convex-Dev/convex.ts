@@ -15,11 +15,17 @@ import { generateKeyPair } from '../crypto.js';
 // Use a JSDoc cast to avoid TS-only `as any` syntax which some transformers may not parse
 // @ts-ignore - JSDoc cast for runtime only
 const g = /** @type {any} */ (globalThis);
+
+// Initialize WebCrypto if not available - Node 18+ has webcrypto available globally
 if (!g.crypto || !g.crypto.subtle) {
   try {
-    const { webcrypto } = require('node:crypto');
+    // In Node 18+, webcrypto is available as a global, but we need to import it
+    // This is a synchronous operation in Node 18+
+    const { webcrypto } = eval('require')('node:crypto');
     g.crypto = webcrypto;
-  } catch {}
+  } catch {
+    // Fallback if import fails
+  }
 }
 const hasWebCrypto = typeof g.crypto !== 'undefined' && !!g.crypto?.subtle;
 

@@ -1,6 +1,7 @@
 {
   "name": "@convex-world/convex-react",
   "version": "0.1.0",
+  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,5 +17,11 @@
     "typescript": "^5.0.0",
     "@types/jest": "^29.0.0",
     "@types/react": "^18.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   }
 } 
