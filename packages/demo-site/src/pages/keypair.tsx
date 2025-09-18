@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import Head from "next/head";
+import { Identicon } from "@convex-world/convex-react";
 import { generateKeyPair, bytesToHex } from "@convex-world/convex-client";
 
 export default function KeyPairGeneratorPage() {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPrivate, setShowPrivate] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -62,27 +64,42 @@ export default function KeyPairGeneratorPage() {
                   <label className="text-sm font-semibold text-secondary">Public Key</label>
                   <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
                     <code className="text-primary break-all flex-1 mr-3">{publicKey}</code>
-                    <button 
-                      onClick={() => copyToClipboard(publicKey)}
-                      className="copy-btn flex-shrink-0"
-                      title="Copy to clipboard"
-                    >
-                      <span className="material-symbols-outlined">content_copy</span>
-                    </button>
+                    {publicKey && (
+                      <div className="flex items-center" style={{ gap: 8 }}>
+                        <Identicon data={publicKey} size={7} pixelSize={6} />
+                        <button 
+                          onClick={() => copyToClipboard(publicKey)}
+                          className="copy-btn flex-shrink-0"
+                          title="Copy to clipboard"
+                        >
+                          <span className="material-symbols-outlined">content_copy</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-secondary">Private Key</label>
                   <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center justify-between">
-                    <code className="text-warning break-all flex-1 mr-3">{privateKey}</code>
-                    <button 
-                      onClick={() => copyToClipboard(privateKey)}
-                      className="copy-btn flex-shrink-0"
-                      title="Copy to clipboard"
-                    >
-                      <span className="material-symbols-outlined">content_copy</span>
-                    </button>
+                    <code className="text-warning break-all flex-1 mr-3">{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
+                    <div className="flex items-center" style={{ gap: 8 }}>
+                      <button
+                        onClick={() => setShowPrivate((v) => !v)}
+                        className="copy-btn flex-shrink-0"
+                        title={showPrivate ? "Hide private key" : "Show private key"}
+                        aria-pressed={showPrivate}
+                      >
+                        <span className="material-symbols-outlined">{showPrivate ? 'visibility_off' : 'visibility'}</span>
+                      </button>
+                      <button 
+                        onClick={() => copyToClipboard(privateKey)}
+                        className="copy-btn flex-shrink-0"
+                        title="Copy to clipboard"
+                      >
+                        <span className="material-symbols-outlined">content_copy</span>
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs text-muted">
                     ⚠️ Keep your private key secure and never share it with anyone
