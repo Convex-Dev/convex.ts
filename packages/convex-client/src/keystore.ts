@@ -12,7 +12,7 @@ async function deriveAesGcmKey(password: string, salt: Uint8Array, iterations: n
     ['deriveKey']
   );
   return await subtle.deriveKey(
-    { name: 'PBKDF2', salt: salt as any, iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: asBufferSource(salt), iterations, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -24,6 +24,29 @@ function getSubtleOrThrow(): SubtleCrypto {
   const subtle = (globalThis.crypto && globalThis.crypto.subtle) || (globalThis as any).msCrypto?.subtle;
   if (!subtle) throw new Error('Web Crypto API not available: crypto.subtle is undefined');
   return subtle;
+}
+
+/** Convert a Uint8Array to a BufferSource backed by a non-shared ArrayBuffer. */
+function asBufferSource(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
+/** Convert bytes to JSON-friendly number array */
+function bytesToJsonArray(bytes: Uint8Array): number[] {
+  return Array.from(bytes);
+}
+
+/** Convert JSON number array to Uint8Array */
+function jsonArrayToBytes(arr: number[]): Uint8Array {
+  return new Uint8Array(arr);
+}
+
+/** Constant-time-like byte comparison (loop-based, adequate here) */
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let same = 0;
+  for (let i = 0; i < a.length; i++) same |= a[i] ^ b[i];
+  return same === 0;
 }
 
 export type EncryptedPayload = {
@@ -39,7 +62,7 @@ export async function encryptData(data: Uint8Array, password: string, iterations
   const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
   const key = await deriveAesGcmKey(password, salt, iterations);
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await subtle.encrypt({ name: 'AES-GCM', iv: iv as any }, key, data as any);
+  const encrypted = await subtle.encrypt({ name: 'AES-GCM', iv: asBufferSource(iv) }, key, asBufferSource(data));
   return { salt, iv, ciphertext: new Uint8Array(encrypted), iterations };
 }
 
@@ -47,7 +70,7 @@ export async function encryptData(data: Uint8Array, password: string, iterations
 export async function decryptData(encryptedData: Uint8Array, iv: Uint8Array, password: string, salt: Uint8Array, iterations: number = 100_000): Promise<Uint8Array> {
   const subtle = getSubtleOrThrow();
   const key = await deriveAesGcmKey(password, salt, iterations);
-  const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv: iv as any }, key, encryptedData as any);
+  const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv: asBufferSource(iv) }, key, asBufferSource(encryptedData));
   return new Uint8Array(decrypted);
 }
 
@@ -72,26 +95,50 @@ export class LocalStorageKeyStore extends KeyStore {
   private prefix = 'convex-keystore:';
   private sessionPrefix = 'convex-unlocked:';
 
+  // ----- Internal storage helpers -----
+  private readStoredRecord(alias: string): StoredRecord | null {
+    const raw = localStorage.getItem(`${this.prefix}${alias}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as StoredRecord;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeStoredRecord(alias: string, record: StoredRecord): void {
+    localStorage.setItem(`${this.prefix}${alias}`, JSON.stringify(record));
+  }
+
+  private readSession(alias: string): { publicKey: number[]; privateKey: number[] } | null {
+    const raw = sessionStorage.getItem(`${this.sessionPrefix}${alias}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as { publicKey: number[]; privateKey: number[] };
+    } catch {
+      return null;
+    }
+  }
+
   async storeKeyPair(alias: string, keyPair: KeyPair, password: string): Promise<void> {
     const { iv, ciphertext, salt, iterations } = await encryptData(keyPair.privateKey, password);
     const data: StoredRecord = {
-      publicKey: Array.from(keyPair.publicKey),
-      iv: Array.from(iv),
-      salt: Array.from(salt),
-      encryptedPrivateKey: Array.from(ciphertext),
+      publicKey: bytesToJsonArray(keyPair.publicKey),
+      iv: bytesToJsonArray(iv),
+      salt: bytesToJsonArray(salt),
+      encryptedPrivateKey: bytesToJsonArray(ciphertext),
       iterations,
     };
-    localStorage.setItem(`${this.prefix}${alias}`, JSON.stringify(data));
+    this.writeStoredRecord(alias, data);
   }
 
   async getKeyPair(alias: string, password: string): Promise<KeyPair | null> {
-    const raw = localStorage.getItem(`${this.prefix}${alias}`);
-    if (!raw) return null;
-    const parsed: StoredRecord = JSON.parse(raw);
+    const parsed = this.readStoredRecord(alias);
+    if (!parsed) return null;
     const { publicKey, iv, salt, encryptedPrivateKey, iterations } = parsed;
     try {
-      const priv = await decryptData(new Uint8Array(encryptedPrivateKey), new Uint8Array(iv), password, new Uint8Array(salt), iterations ?? 100_000);
-      return { publicKey: new Uint8Array(publicKey), privateKey: priv };
+      const priv = await decryptData(jsonArrayToBytes(encryptedPrivateKey), jsonArrayToBytes(iv), password, jsonArrayToBytes(salt), iterations ?? 100_000);
+      return { publicKey: jsonArrayToBytes(publicKey), privateKey: priv };
     } catch (e) {
       console.error('Decryption failed:', e);
       return null;
@@ -118,14 +165,9 @@ export class LocalStorageKeyStore extends KeyStore {
    * @returns The public key as Uint8Array, or null if not found
    */
   async getPublicKey(alias: string): Promise<Uint8Array | null> {
-    const raw = localStorage.getItem(`${this.prefix}${alias}`);
-    if (!raw) return null;
-    try {
-      const parsed: StoredRecord = JSON.parse(raw);
-      return new Uint8Array(parsed.publicKey);
-    } catch {
-      return null;
-    }
+    const parsed = this.readStoredRecord(alias);
+    if (!parsed) return null;
+    return jsonArrayToBytes(parsed.publicKey);
   }
 
   /**
@@ -156,17 +198,12 @@ export class LocalStorageKeyStore extends KeyStore {
   getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): KeyPair | null {
     // Lookup by alias
     if (typeof aliasOrPublicKey === 'string') {
-      const raw = sessionStorage.getItem(`${this.sessionPrefix}${aliasOrPublicKey}`);
-      if (!raw) return null;
-      try {
-        const parsed = JSON.parse(raw);
-        return {
-          publicKey: new Uint8Array(parsed.publicKey),
-          privateKey: new Uint8Array(parsed.privateKey),
-        };
-      } catch {
-        return null;
-      }
+      const parsed = this.readSession(aliasOrPublicKey);
+      if (!parsed) return null;
+      return {
+        publicKey: jsonArrayToBytes(parsed.publicKey),
+        privateKey: jsonArrayToBytes(parsed.privateKey),
+      };
     }
 
     // Lookup by public key value
@@ -174,28 +211,36 @@ export class LocalStorageKeyStore extends KeyStore {
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
       if (!key || !key.startsWith(this.sessionPrefix)) continue;
-      const raw = sessionStorage.getItem(key);
-      if (!raw) continue;
-      try {
-        const parsed = JSON.parse(raw);
-        const storedPub = new Uint8Array(parsed.publicKey);
-        if (storedPub.length === target.length) {
-          let equal = true;
-          for (let j = 0; j < storedPub.length; j++) {
-            if (storedPub[j] !== target[j]) { equal = false; break; }
-          }
-          if (equal) {
-            return {
-              publicKey: storedPub,
-              privateKey: new Uint8Array(parsed.privateKey),
-            };
-          }
-        }
-      } catch {
-        // ignore malformed entries
+      const parsed = this.readSession(key.substring(this.sessionPrefix.length));
+      if (!parsed) continue;
+      const storedPub = jsonArrayToBytes(parsed.publicKey);
+      if (bytesEqual(storedPub, target)) {
+        return {
+          publicKey: storedPub,
+          privateKey: jsonArrayToBytes(parsed.privateKey),
+        };
       }
     }
     return null;
+  }
+
+  /** Convenience: unlock by alias and password, store in session, and return the key pair. */
+  async unlock(alias: string, password: string): Promise<KeyPair | null> {
+    const kp = await this.getKeyPair(alias, password);
+    if (kp) this.storeUnlockedKeyPair(alias, kp);
+    return kp;
+  }
+
+  /** Convenience: lock by alias (removes from session). */
+  lock(alias: string): void {
+    this.removeUnlockedKeyPair(alias);
+  }
+
+  /** Check if a key is currently unlocked (by alias or public key). */
+  isUnlocked(alias: string): boolean;
+  isUnlocked(publicKey: Uint8Array): boolean;
+  isUnlocked(aliasOrPublicKey: string | Uint8Array): boolean {
+    return this.getUnlockedKeyPair(aliasOrPublicKey as any) !== null;
   }
 
   /**
