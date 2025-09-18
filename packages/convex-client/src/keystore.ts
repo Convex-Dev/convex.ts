@@ -110,6 +110,22 @@ export class LocalStorageKeyStore extends KeyStore {
   async deleteKeyPair(alias: string): Promise<void> {
     localStorage.removeItem(`${this.prefix}${alias}`);
   }
+
+  /**
+   * Get the public key for a given alias (no password required)
+   * @param alias The alias to look up
+   * @returns The public key as Uint8Array, or null if not found
+   */
+  async getPublicKey(alias: string): Promise<Uint8Array | null> {
+    const raw = localStorage.getItem(`${this.prefix}${alias}`);
+    if (!raw) return null;
+    try {
+      const parsed: StoredRecord = JSON.parse(raw);
+      return new Uint8Array(parsed.publicKey);
+    } catch {
+      return null;
+    }
+  }
 }
 
 

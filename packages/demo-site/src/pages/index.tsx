@@ -21,8 +21,8 @@ export default function Home() {
           <div className="demo-grid">
             <DemoCard
               href="/keypair"
-              title="Key Pair Generator"
-              description="Generate a new cryptographic key pair"
+              title="Keyring"
+              description="Manage keys: generate, store, unlock, remove"
               emoji="🔑"
             />
             <DemoCard
@@ -64,8 +64,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="text-center mt-8 text-secondary text-sm">
           <p>
-            Built with <span className="text-primary">Next.js</span> and{" "}
-            <span className="text-primary">Convex TypeScript Client</span>
+            Built with the  <a href="https://github.com/Convex-Dev/convex.ts" className="text-primary hover:underline" target="_blank" rel="noreferrer">Convex TypeScript Client</a>
           </p>
         </footer>
       </div>

@@ -67,6 +67,22 @@ describe('LocalStorageKeyStore', () => {
     const wrong = await ks.getKeyPair('bob', 'wrong-password');
     expect(wrong).toBeNull();
   });
+
+  (hasWebCrypto ? it : it.skip)('gets public key without password', async () => {
+    const ks = new LocalStorageKeyStore();
+    const kp = await generateKeyPair();
+    await ks.storeKeyPair('charlie', kp, 'password');
+
+    const publicKey = await ks.getPublicKey('charlie');
+    expect(publicKey).not.toBeNull();
+    expect(Buffer.from(publicKey!)).toEqual(Buffer.from(kp.publicKey));
+  });
+
+  (hasWebCrypto ? it : it.skip)('returns null for non-existent alias', async () => {
+    const ks = new LocalStorageKeyStore();
+    const publicKey = await ks.getPublicKey('nonexistent');
+    expect(publicKey).toBeNull();
+  });
 });
 
 

@@ -1,4 +1,4 @@
-# Convex TypeScript Client
+# [Convex TypeScript Client](https://github.com/Convex-Dev/convex.ts)
 
 A TypeScript/JavaScript client library for interacting with the Convex DLT network.
 
