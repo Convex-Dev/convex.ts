@@ -12,23 +12,30 @@ jest.mock('../crypto.js', () => ({
 import { generateKeyPair } from '../crypto.js';
 
 // Ensure WebCrypto is available for tests (Node 18+ provides it via node:crypto)
-if (!(globalThis as any).crypto || !(globalThis as any).crypto.subtle) {
+// Use a JSDoc cast to avoid TS-only `as any` syntax which some transformers may not parse
+// @ts-ignore - JSDoc cast for runtime only
+const g = /** @type {any} */ (globalThis);
+if (!g.crypto || !g.crypto.subtle) {
   try {
     const { webcrypto } = require('node:crypto');
-    (globalThis as any).crypto = webcrypto;
+    g.crypto = webcrypto;
   } catch {}
 }
-const hasWebCrypto = typeof globalThis.crypto !== 'undefined' && !!(globalThis as any).crypto?.subtle;
+const hasWebCrypto = typeof g.crypto !== 'undefined' && !!g.crypto?.subtle;
 
 describe('LocalStorageKeyStore', () => {
   beforeEach(() => {
     // JSDOM provides localStorage in testEnvironment 'node' only if mocked; polyfill a simple version
-    let store: Record<string, string> = {};
-    (global as any).localStorage = {
-      getItem: (k: string) => (k in store ? store[k] : null),
-      setItem: (k: string, v: string) => { store[k] = String(v); },
-      removeItem: (k: string) => { delete store[k]; },
-      key: (i: number) => Object.keys(store)[i] ?? null,
+    /** @type {Record<string,string>} */
+    let store = {};
+    g.localStorage = {
+      // @ts-ignore
+      getItem: (k) => (k in store ? store[k] : null),
+      // @ts-ignore
+      setItem: (k, v) => { store[k] = String(v); },
+      // @ts-ignore
+      removeItem: (k) => { delete store[k]; },
+      key: (i) => Object.keys(store)[i] ?? null,
       get length() { return Object.keys(store).length; },
       clear: () => { store = {}; },
     };
@@ -41,8 +48,9 @@ describe('LocalStorageKeyStore', () => {
 
     const restored = await ks.getKeyPair('alice', 'correct horse battery staple');
     expect(restored).not.toBeNull();
-    expect(Buffer.from(restored!.publicKey)).toEqual(Buffer.from(kp.publicKey));
-    expect(Buffer.from(restored!.privateKey)).toEqual(Buffer.from(kp.privateKey));
+    if (!restored) throw new Error('restored should not be null');
+    expect(Buffer.from(restored.publicKey)).toEqual(Buffer.from(kp.publicKey));
+    expect(Buffer.from(restored.privateKey)).toEqual(Buffer.from(kp.privateKey));
   });
 
   (hasWebCrypto ? it : it.skip)('fails to restore with wrong password', async () => {
