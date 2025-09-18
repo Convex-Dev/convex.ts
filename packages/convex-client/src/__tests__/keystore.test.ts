@@ -149,6 +149,35 @@ describe('LocalStorageKeyStore', () => {
     expect(parsedAfter.privateKey).toBeUndefined();
     expect(Array.isArray(parsedAfter.encryptedPrivateKey)).toBe(true);
   });
+
+  (hasWebCrypto ? it : it.skip)('getUnlockedKeyPair works by public key (success)', async () => {
+    const ks = new LocalStorageKeyStore();
+    const kp = await generateKeyPair();
+    await ks.storeKeyPair('frank', kp, 'pw');
+
+    // unlock and store in session
+    const restored = await ks.getKeyPair('frank', 'pw');
+    expect(restored).not.toBeNull();
+    if (!restored) throw new Error('restored should not be null');
+    ks.storeUnlockedKeyPair('frank', restored);
+
+    // retrieve by public key
+    const byPub = ks.getUnlockedKeyPair(restored.publicKey);
+    expect(byPub).not.toBeNull();
+    if (!byPub) throw new Error('byPub should not be null');
+    expect(Buffer.from(byPub.publicKey)).toEqual(Buffer.from(restored.publicKey));
+    expect(Buffer.from(byPub.privateKey)).toEqual(Buffer.from(restored.privateKey));
+  });
+
+  (hasWebCrypto ? it : it.skip)('getUnlockedKeyPair by public key returns null when not found', async () => {
+    const ks = new LocalStorageKeyStore();
+    // ensure session storage empty
+    sessionStorage.clear();
+    // make a random pubkey that doesn't exist
+    const nonExistent = new Uint8Array([9,8,7,6,5,4,3,2]);
+    const res = ks.getUnlockedKeyPair(nonExistent);
+    expect(res).toBeNull();
+  });
 });
 
 

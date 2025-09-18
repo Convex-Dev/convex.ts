@@ -142,22 +142,60 @@ export class LocalStorageKeyStore extends KeyStore {
   }
 
   /**
-   * Get an unlocked key pair from session storage
-   * @param alias The alias to look up
+   * Get an unlocked key pair from session storage.
+   *
+   * Overloads:
+   * - Provide an alias string to fetch by alias
+   * - Provide a Uint8Array public key to fetch by public key
+   *
+   * @param alias The alias to look up (when string overload is used)
    * @returns The unlocked key pair, or null if not found
    */
-  getUnlockedKeyPair(alias: string): KeyPair | null {
-    const raw = sessionStorage.getItem(`${this.sessionPrefix}${alias}`);
-    if (!raw) return null;
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        publicKey: new Uint8Array(parsed.publicKey),
-        privateKey: new Uint8Array(parsed.privateKey),
-      };
-    } catch {
-      return null;
+  getUnlockedKeyPair(alias: string): KeyPair | null;
+  getUnlockedKeyPair(publicKey: Uint8Array): KeyPair | null;
+  getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): KeyPair | null {
+    // Lookup by alias
+    if (typeof aliasOrPublicKey === 'string') {
+      const raw = sessionStorage.getItem(`${this.sessionPrefix}${aliasOrPublicKey}`);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          publicKey: new Uint8Array(parsed.publicKey),
+          privateKey: new Uint8Array(parsed.privateKey),
+        };
+      } catch {
+        return null;
+      }
     }
+
+    // Lookup by public key value
+    const target = aliasOrPublicKey;
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (!key || !key.startsWith(this.sessionPrefix)) continue;
+      const raw = sessionStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw);
+        const storedPub = new Uint8Array(parsed.publicKey);
+        if (storedPub.length === target.length) {
+          let equal = true;
+          for (let j = 0; j < storedPub.length; j++) {
+            if (storedPub[j] !== target[j]) { equal = false; break; }
+          }
+          if (equal) {
+            return {
+              publicKey: storedPub,
+              privateKey: new Uint8Array(parsed.privateKey),
+            };
+          }
+        }
+      } catch {
+        // ignore malformed entries
+      }
+    }
+    return null;
   }
 
   /**
