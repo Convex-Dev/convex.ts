@@ -374,6 +374,18 @@ input:focus, textarea:focus, select:focus {
 .w-full { width: 100%; }
 .h-full { height: 100%; }
 
+/* Responsive grid for demo cards */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-lg);
+  align-items: stretch;
+}
+
+.demo-card {
+  height: 100%;
+}
+
 .rounded { border-radius: var(--radius-md); }
 .rounded-lg { border-radius: var(--radius-lg); }
 .rounded-xl { border-radius: var(--radius-xl); }

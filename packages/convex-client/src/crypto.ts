@@ -7,7 +7,7 @@ import { KeyPair } from './types.js';
 type Bytes = Uint8Array;
 type Hex = Bytes | string;
 
-// Helper function to convert Uint8Array to hex string
+/** Helper function to convert Uint8Array to hex string */ 
 export function bytesToHex(bytes: Bytes): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -20,7 +20,7 @@ function charValue(ch: number): number | undefined {
   return;
 }
 
-// Helper function to convert hex string or Uint8Array to Uint8Array
+/** Helper function to convert hex string or Uint8Array to Uint8Array */
 export function hexToBytes(input: Hex): Uint8Array {
   if (typeof input === 'string') {
     if (input.startsWith('0x')) input = input.substring(2)
@@ -40,9 +40,7 @@ export function hexToBytes(input: Hex): Uint8Array {
   return input; // Already a Uint8Array
 }
 
-/**
- * Generate a new Ed25519 key pair
- */
+/** Generate a new Ed25519 key pair */
 export async function generateKeyPair(): Promise<KeyPair> {
   const privateKey = ed.utils.randomPrivateKey();
   const publicKey = await ed.getPublicKey(privateKey);
@@ -53,7 +51,7 @@ export async function generateKeyPair(): Promise<KeyPair> {
   };
 }
 
-/**
+/** 
  * Sign a message with a private key
  * @param message Message to sign
  * @param privateKey Private key as Uint8Array
