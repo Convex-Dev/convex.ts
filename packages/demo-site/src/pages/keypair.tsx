@@ -366,72 +366,67 @@ export default function KeyPairGeneratorPage() {
             </div>
 
             {publicKey && privateKey && (
-              <div className="fade-in" style={{ margin: '0 auto', padding: '16px' }}>
+              <div className="fade-in p-2 bg-surface-light border border-border rounded-lg" >
                 {/* Single background panel for the entire key display */}
-                <div className="bg-surface-light border border-border rounded-lg">
                   {/* Grid Layout for Public and Private Keys */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'auto auto 1fr auto',
+                    gridTemplateColumns: '60px 40px auto 60px',
                     gap: '8px',
-                    padding: '8px',
+                    padding: '12px',
                     alignItems: 'center'
                   }}>
                     {/* Public Key Row */}
-                    <div className="text-sm font-semibold text-secondary">Public</div>
-                    <div style={{ display: 'flex', justifyContent: 'center', alignContent: 'left' }}>
+                    <div className="text-sm font-semibold text-secondary" style={{ textAlign: 'left' }}>Public</div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
                       {publicKey && (
                         <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32 }} />
                       )}
                     </div>
-                    <div className="bg-white border border-gray-200 rounded p-3 flex items-center min-w-0">
-                      <code className="text-primary break-all flex-1 mr-3" style={{ textAlign: 'left', minWidth: 0 }}>{publicKey}</code>
-
+                    <div className="bg-white border border-gray-200 rounded items-center min-w-0">
+                      <code className="text-primary break-all flex-1" style={{ textAlign: 'left', minWidth: 0}}>{publicKey}</code>
                     </div>
                     <Button
                       onClick={() => copyToClipboard(publicKey)}
                       variant="secondary"
                       size="sm"
-                      style={{ height: '28px', fontSize: '11px', flexShrink: 0, minWidth: '50px' }}
+                      style={{ height: '28px', flexShrink: 0, minWidth: '50px' }}
                       title="Copy to clipboard"
                     >
                       Copy
                     </Button>
 
                     {/* Private Key Row */}
-                    <div className="text-sm font-semibold text-secondary">Private</div>
+                    <div className="text-sm font-semibold text-secondary" style={{ textAlign: 'left' }}>Private</div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <Button
                         onClick={() => setShowPrivate((v) => !v)}
                         variant="secondary"
-                        size="sm"
-                        style={{ height: '32px', fontSize: '16px', minWidth: '32px', padding: '0' }}
+                        size="md"
+                        style={{ height: '32px', minWidth: '32px', padding: '0' }}
                         title={showPrivate ? "Hide private key" : "Show private key"}
                       >
                         {showPrivate ? '👁️‍🗨️' : '👁'}
                       </Button>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded p-3 flex items-center min-w-0">
-                      <code className="text-warning break-all flex-1 mr-3" style={{ textAlign: 'left', minWidth: 0 }}>
+                    <div className="bg-white border border-gray-200 rounded items-center min-w-0">
+                      <code className="text-warning break-all flex-1" style={{ textAlign: 'left', minWidth: 0 }}>
                         {showPrivate ? privateKey : '•'.repeat(privateKey.length)}
                       </code>
-
                     </div>
                     <Button
                       onClick={() => copyToClipboard(privateKey)}
                       variant="secondary"
-                      size="sm"
-                      style={{ height: '28px', fontSize: '11px', flexShrink: 0, minWidth: '50px' }}
+                      size="md"
+                      style={{ height: '32px', flexShrink: 0, minWidth: '50px' }}
                       title="Copy to clipboard"
                     >
                       Copy
                     </Button>
                   </div>
-
-                  <p className="text-xs text-muted" style={{ textAlign: 'center', marginTop: '15px', marginBottom: '0' }}>
+                  <p className="text-xs text-muted m-2" style={{ textAlign: 'center'}}>
                     ⚠️ Keep your private key secure and never share it with anyone
                   </p>
-                </div>
               </div>
             )}
 
