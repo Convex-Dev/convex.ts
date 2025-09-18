@@ -213,15 +213,11 @@ export default function KeyPairGeneratorPage() {
           {/* Header */}
           <header className="text-center mb-8 fade-in">
             <h1 className="mb-4">Keyring</h1>
-            <p className="text-secondary text-lg max-w-2xl">
-              Generate keys and manage your local key store.
-            </p>
           </header>
 
           {/* Keyring Management - At the top */}
           <div className="card w-full max-w-3xl fade-in" style={{ marginBottom: 24 }}>
             <div className="text-center mb-6">
-              <h2 className="mb-2">Your Keyring</h2>
               <p className="text-secondary">Keys stored locally in your browser.</p>
             </div>
 
@@ -368,10 +364,6 @@ export default function KeyPairGeneratorPage() {
 
           {/* Key Generator - Below the keyring */}
           <div className="card w-full max-w-2xl fade-in">
-            <div className="text-center mb-6">
-              <h2 className="mb-2">Create New Keys</h2>
-              <p className="text-secondary">Click to generate a new public/private key pair.</p>
-            </div>
 
             <div className="flex justify-center mb-6">
               <button 
@@ -437,7 +429,8 @@ export default function KeyPairGeneratorPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-secondary">Add to Key Store</label>
                   <div className="bg-surface-light border border-border rounded-lg p-3">
-                    <div className="grid" style={{ gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
+                    <div className="grid" style={{ gridTemplateColumns: '80px 200px 1fr', gap: '12px', alignItems: 'center' }}>
+                      <label className="text-sm text-secondary whitespace-nowrap">Alias</label>
                       <input
                         type="text"
                         placeholder="Alias (e.g., alice)"
@@ -445,25 +438,33 @@ export default function KeyPairGeneratorPage() {
                         onChange={(e) => setNewAlias(e.target.value)}
                         className="input"
                       />
-                      <div className="space-y-1">
-                        <input
-                          type="password"
-                          placeholder="Password (optional)"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="input"
-                        />
+                      <div></div>
+                      
+                      <label className="text-sm text-secondary whitespace-nowrap">Password</label>
+                      <input
+                        type="password"
+                        placeholder="Password (optional)"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="input"
+                      />
+                      <div className="flex items-center">
                         {!newPassword && (
-                          <div className="text-xs text-warning">⚠️ WARNING: password is blank</div>
+                          <div className="text-xs text-warning whitespace-nowrap">⚠️ WARNING: password is blank</div>
                         )}
                       </div>
-                      <button
-                        onClick={handleAddToKeyStore}
-                        className="btn btn-primary"
-                        disabled={!newAlias}
-                      >
-                        Add
-                      </button>
+                      
+                      <div></div>
+                      <div className="flex">
+                        <button
+                          onClick={handleAddToKeyStore}
+                          className="btn btn-primary"
+                          disabled={!newAlias}
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <div></div>
                     </div>
                   </div>
                 </div>
