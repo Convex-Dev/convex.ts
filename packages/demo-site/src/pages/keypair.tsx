@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
 import { generateKeyPair, bytesToHex, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-client";
+import Button from "../components/Button";
 
 export default function KeyPairGeneratorPage() {
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -52,7 +53,7 @@ export default function KeyPairGeneratorPage() {
     if (!ks) return;
     const list = await ks.listAliases();
     setAliases(list);
-    
+
     // Load public keys for all aliases
     const pubKeys: Record<string, string> = {};
     for (const alias of list) {
@@ -165,7 +166,7 @@ export default function KeyPairGeneratorPage() {
     if (!pubHex) return;
     try {
       await navigator.clipboard.writeText(pubHex.startsWith('0x') ? pubHex : `0x${pubHex}`);
-    } catch {}
+    } catch { }
   };
 
   const copyToClipboard = (text: string) => {
@@ -194,22 +195,21 @@ export default function KeyPairGeneratorPage() {
                   autoComplete="off"
                 />
                 <div className="flex" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-                  <button className="btn btn-secondary" onClick={() => { setPwModalAlias(null); setPwModalValue(""); }}>Cancel</button>
-                  <button
-                    className="btn btn-primary"
+                  <Button variant="secondary" onClick={() => { setPwModalAlias(null); setPwModalValue(""); }}>Cancel</Button>
+                  <Button
                     onClick={async () => {
                       if (!pwModalAlias) return;
-                  const alias = pwModalAlias;
+                      const alias = pwModalAlias;
                       setPwModalAlias(null);
                       setPwModalValue("");
-                  await handleUnlock(alias, pwModalValue);
+                      await handleUnlock(alias, pwModalValue);
                     }}
-                  >Unlock</button>
+                  >Unlock</Button>
                 </div>
               </div>
             </div>
           )}
-          
+
           {/* Header */}
           <header className="text-center mb-8 fade-in">
             <h1 className="mb-4">Keyring</h1>
@@ -226,9 +226,9 @@ export default function KeyPairGeneratorPage() {
             )}
 
             {!!aliases.length && (
-              <div className="grid" style={{ 
+              <div className="grid" style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr auto auto auto', 
+                gridTemplateColumns: '2fr auto auto auto',
                 alignItems: 'center',
                 backgroundColor: 'var(--surface-light)',
                 borderRadius: '8px',
@@ -247,9 +247,9 @@ export default function KeyPairGeneratorPage() {
                   const pubHex = publicKeys[alias] || (isUnlocked ? bytesToHex(kp!.publicKey) : undefined);
                   return (
                     <React.Fragment key={alias}>
-                      <div style={{ 
-                        minWidth: 0, 
-                        padding: '12px 16px', 
+                      <div style={{
+                        minWidth: 0,
+                        padding: '12px 16px',
                         display: 'flex',
                         alignItems: 'center',
                         minHeight: '48px'
@@ -270,8 +270,8 @@ export default function KeyPairGeneratorPage() {
                           <strong className={`text-primary ${pubHex ? 'hover:underline' : ''}`}>{alias}</strong>
                         </button>
                       </div>
-                      
-                      <div 
+
+                      <div
                         className="text-center"
                         title={isUnlocked ? 'Click to lock' : 'Click to unlock'}
                         aria-label={isUnlocked ? 'Click to lock' : 'Click to unlock'}
@@ -279,9 +279,9 @@ export default function KeyPairGeneratorPage() {
                         tabIndex={0}
                         onClick={() => toggleLock(alias)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLock(alias); } }}
-                        style={{ 
-                          cursor: 'pointer', 
-                          padding: '12px 16px', 
+                        style={{
+                          cursor: 'pointer',
+                          padding: '12px 16px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -290,70 +290,60 @@ export default function KeyPairGeneratorPage() {
                       >
                         <span style={{ fontSize: 24 }}>{isUnlocked ? '🔑' : '🔒'}</span>
                       </div>
-                      
-                      <div style={{ 
-                        padding: '12px 16px', 
+
+                      <div style={{
+                        padding: '12px 16px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         minHeight: '48px'
                       }}>
                         {!isUnlocked && (
-                          <button 
-                            className="btn btn-primary" 
+                          <Button
                             onClick={() => toggleLock(alias)}
                             style={{ height: '36px', minWidth: '80px' }}
                           >
                             Unlock
-                          </button>
+                          </Button>
                         )}
                         {isUnlocked && (
-                          <button 
-                            className="btn btn-secondary" 
+                          <Button
+                            variant="secondary"
                             onClick={() => handleLock(alias)}
                             style={{ height: '36px', minWidth: '80px' }}
                           >
                             Lock
-                          </button>
+                          </Button>
                         )}
                       </div>
-                      
-                      <div className="text-center" style={{ 
-                        padding: '12px 16px', 
+
+                      <div className="text-center" style={{
+                        padding: '12px 16px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         minHeight: '48px'
                       }}>
-                        <button 
+                        <Button
                           onClick={() => handleRemove(alias)}
                           title={`Remove ${alias}`}
-                          style={{ 
+                          variant="danger"
+                          style={{
                             background: 'transparent',
                             border: '1px solid #ef4444',
                             color: '#faa',
                             borderRadius: '6px',
                             padding: '6px 8px',
-                            cursor: 'pointer',
                             fontSize: '24px',
                             minWidth: 'auto',
                             height: '36px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#ef4444';
-                            e.currentTarget.style.color = 'white';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = '#faa';
+                            justifyContent: 'center'
                           }}
                         >
                           🗑
-                        </button>
+                        </Button>
                       </div>
                     </React.Fragment>
                   );
@@ -366,115 +356,131 @@ export default function KeyPairGeneratorPage() {
           <div className="card w-full max-w-2xl fade-in">
 
             <div className="flex justify-center mb-6">
-              <button 
-                onClick={handleGenerate} 
+              <Button
+                onClick={handleGenerate}
                 disabled={loading}
-                className={`btn btn-primary ${loading ? 'pulse' : ''}`}
+                className={loading ? 'pulse' : ''}
               >
                 {loading ? "Generating Key Pair..." : "Generate New Key Pair"}
-              </button>
+              </Button>
             </div>
 
             {publicKey && privateKey && (
-              <div className="fade-in" style={{ maxWidth: 720, margin: '0 auto', width: '100%' }}>
-                <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Public Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
-                    {publicKey && (
-                      <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32, marginRight: 8 }} />
-                    )}
-                    <code className="text-primary break-all flex-1" style={{ textAlign: 'left' }}>{publicKey}</code>
-                    <div style={{ width: 12, marginLeft: 'auto' }} />
-                    <button 
+              <div className="fade-in" style={{ margin: '0 auto', padding: '16px' }}>
+                {/* Single background panel for the entire key display */}
+                <div className="bg-surface-light border border-border rounded-lg">
+                  {/* Grid Layout for Public and Private Keys */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto auto 1fr auto',
+                    gap: '8px',
+                    padding: '8px',
+                    alignItems: 'center'
+                  }}>
+                    {/* Public Key Row */}
+                    <div className="text-sm font-semibold text-secondary">Public</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignContent: 'left' }}>
+                      {publicKey && (
+                        <Identicon data={publicKey} size={7} pixelSize={8} style={{ width: 32, height: 32 }} />
+                      )}
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded p-3 flex items-center min-w-0">
+                      <code className="text-primary break-all flex-1 mr-3" style={{ textAlign: 'left', minWidth: 0 }}>{publicKey}</code>
+
+                    </div>
+                    <Button
                       onClick={() => copyToClipboard(publicKey)}
-                      className="copy-btn flex-shrink-0"
+                      variant="secondary"
+                      size="sm"
+                      style={{ height: '28px', fontSize: '11px', flexShrink: 0, minWidth: '50px' }}
                       title="Copy to clipboard"
                     >
-                      <span className="material-symbols-outlined">content_copy</span>
-                    </button>
-                  </div>
-                </div>
+                      Copy
+                    </Button>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Private Key</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3 flex items-center">
-                    <div style={{ width: 32, height: 32, marginRight: 8 }} />
-                    <code className="text-warning break-all flex-1" style={{ textAlign: 'left' }}>{showPrivate ? privateKey : '•'.repeat(privateKey.length)}</code>
-                    <div style={{ width: 12, marginLeft: 'auto' }} />
-                    <div className="flex items-center" style={{ gap: 8 }}>
-                      <button
+                    {/* Private Key Row */}
+                    <div className="text-sm font-semibold text-secondary">Private</div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <Button
                         onClick={() => setShowPrivate((v) => !v)}
-                        className="copy-btn flex-shrink-0"
+                        variant="secondary"
+                        size="sm"
+                        style={{ height: '32px', fontSize: '16px', minWidth: '32px', padding: '0' }}
                         title={showPrivate ? "Hide private key" : "Show private key"}
-                        aria-pressed={showPrivate}
                       >
-                        <span className="material-symbols-outlined">{showPrivate ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                      <button 
-                        onClick={() => copyToClipboard(privateKey)}
-                        className="copy-btn flex-shrink-0"
-                        title="Copy to clipboard"
-                      >
-                        <span className="material-symbols-outlined">content_copy</span>
-                      </button>
+                        {showPrivate ? '👁️‍🗨️' : '👁'}
+                      </Button>
                     </div>
+                    <div className="bg-white border border-gray-200 rounded p-3 flex items-center min-w-0">
+                      <code className="text-warning break-all flex-1 mr-3" style={{ textAlign: 'left', minWidth: 0 }}>
+                        {showPrivate ? privateKey : '•'.repeat(privateKey.length)}
+                      </code>
+
+                    </div>
+                    <Button
+                      onClick={() => copyToClipboard(privateKey)}
+                      variant="secondary"
+                      size="sm"
+                      style={{ height: '28px', fontSize: '11px', flexShrink: 0, minWidth: '50px' }}
+                      title="Copy to clipboard"
+                    >
+                      Copy
+                    </Button>
                   </div>
-                  <p className="text-xs text-muted">
+
+                  <p className="text-xs text-muted" style={{ textAlign: 'center', marginTop: '15px', marginBottom: '0' }}>
                     ⚠️ Keep your private key secure and never share it with anyone
                   </p>
                 </div>
-
-                {/* Save to keystore */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-secondary">Add to Key Store</label>
-                  <div className="bg-surface-light border border-border rounded-lg p-3">
-                    <div className="grid" style={{ gridTemplateColumns: '80px 200px 1fr', gap: '12px', alignItems: 'center' }}>
-                      <label className="text-sm text-secondary whitespace-nowrap">Alias</label>
-                      <input
-                        type="text"
-                        placeholder="Alias (e.g., alice)"
-                        value={newAlias}
-                        onChange={(e) => setNewAlias(e.target.value)}
-                        className="input"
-                      />
-                      <div></div>
-                      
-                      <label className="text-sm text-secondary whitespace-nowrap">Password</label>
-                      <input
-                        type="password"
-                        placeholder="Password (optional)"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="input"
-                      />
-                      <div className="flex items-center">
-                        {!newPassword && (
-                          <div className="text-xs text-warning whitespace-nowrap">⚠️ WARNING: password is blank</div>
-                        )}
-                      </div>
-                      
-                      <div></div>
-                      <div className="flex">
-                        <button
-                          onClick={handleAddToKeyStore}
-                          className="btn btn-primary"
-                          disabled={!newAlias}
-                        >
-                          Add
-                        </button>
-                      </div>
-                      <div></div>
-                    </div>
-                  </div>
-                </div>
-                </div>
               </div>
             )}
+
+            {/* Save to keystore */}
+            <div className="space-y-2" style={{ marginTop: '20px' }}>
+              <label className="text-sm font-semibold text-secondary">Add to Key Store</label>
+              <div className="bg-surface-light border border-border rounded-lg p-3">
+                <div className="grid" style={{ gridTemplateColumns: '80px 200px 1fr', gap: '12px', alignItems: 'center' }}>
+                  <label className="text-sm text-secondary whitespace-nowrap">Alias</label>
+                  <input
+                    type="text"
+                    placeholder="Alias (e.g., alice)"
+                    value={newAlias}
+                    onChange={(e) => setNewAlias(e.target.value)}
+                    className="input"
+                  />
+                  <div></div>
+
+                  <label className="text-sm text-secondary whitespace-nowrap">Password</label>
+                  <input
+                    type="password"
+                    placeholder="Password (optional)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="input"
+                  />
+                  <div className="flex items-center">
+                    {!newPassword && (
+                      <div className="text-xs text-warning whitespace-nowrap">⚠️ WARNING: password is blank</div>
+                    )}
+                  </div>
+
+                  <div></div>
+                  <div className="flex">
+                    <Button
+                      onClick={handleAddToKeyStore}
+                      disabled={!newAlias}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <footer className="text-center mt-8 text-secondary text-sm">
-            <a href="/" className="btn btn-secondary">← Back to Home</a>
+            <Button variant="secondary" onClick={() => window.location.href = '/'}>← Back to Home</Button>
           </footer>
         </div>
       </div>

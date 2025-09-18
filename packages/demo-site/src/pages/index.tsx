@@ -1,5 +1,6 @@
 import React from "react";
 import DemoCard from "../components/DemoCard";
+import Button from "../components/Button";
 
 export default function Home() {
 
@@ -53,10 +54,10 @@ export default function Home() {
               Convex network, including cryptographic operations and transaction management.
             </p>
             <div className="flex items-center" style={{ gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-              <a href="https://convex.world" className="btn btn-secondary" target="_blank" rel="noreferrer">🌐 Convex</a>
-              <a href="https://docs.convex.world" className="btn btn-secondary" target="_blank" rel="noreferrer">📚 Docs</a>
-              <a href="https://github.com/Convex-Dev" className="btn btn-secondary" target="_blank" rel="noreferrer">💻 GitHub Org</a>
-              <a href="https://discord.com/invite/xfYGq4CT7v" className="btn btn-secondary" target="_blank" rel="noreferrer">💬 Discord</a>
+              <Button variant="secondary" onClick={() => window.open('https://convex.world', '_blank')}>🌐 Convex</Button>
+              <Button variant="secondary" onClick={() => window.open('https://docs.convex.world', '_blank')}>📚 Docs</Button>
+              <Button variant="secondary" onClick={() => window.open('https://github.com/Convex-Dev', '_blank')}>💻 GitHub Org</Button>
+              <Button variant="secondary" onClick={() => window.open('https://discord.com/invite/xfYGq4CT7v', '_blank')}>💬 Discord</Button>
             </div>
           </div>
         </div>
