@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
-import { generateKeyPair, bytesToHex, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-client";
+import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-client";
 import Button from "../components/Button";
 
 export default function KeyPairGeneratorPage() {
@@ -21,6 +21,8 @@ export default function KeyPairGeneratorPage() {
   const [newPassword, setNewPassword] = useState("");
   const [pwModalAlias, setPwModalAlias] = useState<string | null>(null);
   const [pwModalValue, setPwModalValue] = useState<string>("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importSeedValue, setImportSeedValue] = useState<string>("");
 
   React.useEffect(() => {
     // Instantiate keystore in browser only
@@ -173,6 +175,48 @@ export default function KeyPairGeneratorPage() {
     navigator.clipboard.writeText(text);
   };
 
+  const handleImportSeed = async () => {
+    if (!importSeedValue.trim()) {
+      alert("Please enter a seed value");
+      return;
+    }
+
+    try {
+      // Convert hex string to Uint8Array using the crypto utility
+      let seedHex = importSeedValue.trim();
+      if (seedHex.startsWith('0x')) {
+        seedHex = seedHex.slice(2);
+      }
+      
+      if (seedHex.length !== 64) {
+        alert("Seed must be 32 bytes (64 hex characters)");
+        return;
+      }
+
+      const seedBytes = hexToBytes(seedHex);
+      
+      // Generate key pair from the seed using proper Ed25519 derivation
+      const keyPair = await generateKeyPairFromSeed(seedBytes);
+      const pubHex = bytesToHex(keyPair.publicKey);
+      const privHex = bytesToHex(keyPair.privateKey);
+      
+      setPublicKey(pubHex);
+      setPrivateKey(privHex);
+      setShowPrivate(false);
+      
+      // Auto-populate alias
+      setNewAlias(`0x${pubHex.slice(0, 8)}`);
+      
+      // Close modal
+      setImportModalOpen(false);
+      setImportSeedValue("");
+      
+    } catch (error) {
+      console.error("Error importing seed:", error);
+      alert("Invalid seed format. Please enter a valid 32-byte hex seed.");
+    }
+  };
+
   return (
     <>
       <Head>
@@ -205,6 +249,27 @@ export default function KeyPairGeneratorPage() {
                       await handleUnlock(alias, pwModalValue);
                     }}
                   >Unlock</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {importModalOpen && (
+            <div role="dialog" aria-modal="true" aria-labelledby="import-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+              <div className="card" style={{ width: 400 }}>
+                <h3 id="import-title" className="mb-2">Import Seed</h3>
+                <p className="text-secondary" style={{ marginBottom: 12 }}>Enter a 32-byte Ed25519 seed (64 hex characters) to import a private key.</p>
+                <textarea
+                  value={importSeedValue}
+                  onChange={(e) => setImportSeedValue(e.target.value)}
+                  placeholder="Enter seed (e.g., 0x1234... or 1234...)"
+                  className="input mb-4"
+                  style={{ minHeight: '80px', fontFamily: 'monospace' }}
+                  autoComplete="off"
+                />
+                <div className="flex" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+                  <Button variant="secondary" onClick={() => { setImportModalOpen(false); setImportSeedValue(""); }}>Cancel</Button>
+                  <Button onClick={handleImportSeed}>Import</Button>
                 </div>
               </div>
             </div>
@@ -355,13 +420,19 @@ export default function KeyPairGeneratorPage() {
           {/* Key Generator - Below the keyring */}
           <div className="card w-full max-w-2xl fade-in">
 
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center gap-4 mb-6">
               <Button
                 onClick={handleGenerate}
                 disabled={loading}
                 className={loading ? 'pulse' : ''}
               >
                 {loading ? "Generating Key Pair..." : "Generate New Key Pair"}
+              </Button>
+              <Button
+                onClick={() => setImportModalOpen(true)}
+                variant="secondary"
+              >
+                Import Seed...
               </Button>
             </div>
 

@@ -51,6 +51,21 @@ export async function generateKeyPair(): Promise<KeyPair> {
   };
 }
 
+/** Generate an Ed25519 key pair from a seed */
+export async function generateKeyPairFromSeed(seed: Uint8Array): Promise<KeyPair> {
+  if (seed.length !== 32) {
+    throw new Error('Seed must be exactly 32 bytes');
+  }
+  
+  const privateKey = seed;
+  const publicKey = await ed.getPublicKey(privateKey);
+  
+  return {
+    privateKey,
+    publicKey
+  };
+}
+
 /** 
  * Sign a message with a private key
  * @param message Message to sign
