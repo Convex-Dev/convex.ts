@@ -5,10 +5,10 @@ import { jest } from '@jest/globals';
 
 jest.mock('axios', () => ({
   create: jest.fn(),
-  default: {
-    create: jest.fn(),
-  }
+  default: jest.fn(),
+  isAxiosError: jest.fn()
 }));
+
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Create a mock AxiosInstance, as returned by mocked axios.create()
@@ -29,7 +29,8 @@ describe('Convex', () => {
     mockAxiosInstance.get.mockReset();
 
     // Make axios.create() return our mock AxiosInstance
-    (mockedAxios.create as any).mockReturnValue(mockAxiosInstance);
+    const mockCreate = jest.fn().mockReturnValue(mockAxiosInstance);
+    (axios as any).create = mockCreate;
     client = new Convex(CONVEX_PEER_URL);
   });
 
