@@ -38,6 +38,23 @@ export default function Home() {
               description="Discover and switch between Convex networks"
               emoji="🌐"
             />
+            <DemoCard
+              href="/connect"
+              title="DEX Demo"
+              description="Prototype decentralized exchange experience"
+              emoji="💱"
+              onClick={(e) => {
+                try {
+                  const saved = localStorage.getItem('convex-recent-accounts');
+                  const recent: number[] = saved ? JSON.parse(saved) : [];
+                  if (Array.isArray(recent) && recent.length) {
+                    e.preventDefault();
+                    const acct = recent[0];
+                    window.location.href = `/dex-demo?account=${acct}`;
+                  }
+                } catch {}
+              }}
+            />
           </div>
         </div>
 

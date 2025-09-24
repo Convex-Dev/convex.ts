@@ -6,11 +6,12 @@ interface DemoCardProps {
   description: string;
   emoji?: string;
   rightAdornment?: React.ReactNode;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
 }
 
-export default function DemoCard({ href, title, description, emoji = "🚀", rightAdornment }: DemoCardProps) {
+export default function DemoCard({ href, title, description, emoji = "🚀", rightAdornment, onClick }: DemoCardProps) {
   return (
-    <a href={href} className="card p-2 hover:bg-surface-light transition-colors duration-50 group demo-card" style={{ display: 'block' }}>
+    <a href={href} onClick={onClick} className="card p-2 hover:bg-surface-light transition-colors duration-50 group demo-card" style={{ display: 'block' }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <span className="text-6xl mr-3 group-hover:scale-110 transition-transform">{emoji}</span>
