@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write # Needed to create releases
+  id-token: write # Required for npm provenance
 
 jobs:
   release:
@@ -58,7 +59,4 @@ jobs:
       - name: Publish to npm
         run: |
           cd packages/convex-client
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          pnpm publish --access=public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          pnpm publish --access=public --no-git-checks --provenance

@@ -34,11 +34,13 @@ Use snapshots for:
 
 **Setup once:**
 
-1. Add npm token to GitHub secrets:
-   - Go to https://github.com/Convex-Dev/convex.ts/settings/secrets/actions
-   - Click "New repository secret"
-   - Name: `NPM_TOKEN`
-   - Value: Your npm token (get from https://www.npmjs.com/settings/[username]/tokens)
+1. Configure npm Trusted Publishing (no tokens needed!):
+   - Go to https://www.npmjs.com/package/@convex-world/convex-ts/access
+   - Click "Publishing access" → "Configure trusted publishing"
+   - Add GitHub Actions publisher:
+     - Repository: `Convex-Dev/convex.ts`
+     - Workflow: `release.yml`
+   - Add another for `snapshot.yml`
 
 2. That's it! The workflow is already committed.
 
