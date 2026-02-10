@@ -2,11 +2,7 @@ import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 ed.etc.sha512Sync = (data: Uint8Array): Uint8Array => sha512(data);
 import { hexToBytes, bytesToHex } from './crypto.js';
-
-/**
- * Type that accepts either bytes or hex string
- */
-export type Hex = Uint8Array | string;
+import type { Hex } from './types.js';
 
 /**
  * Ed25519 key pair for signing Convex transactions
@@ -164,13 +160,4 @@ export class KeyPair {
   toString(): string {
     return `KeyPair { publicKey: ${this.publicKeyHex.substring(0, 16)}... }`;
   }
-}
-
-/**
- * Legacy interface for backward compatibility
- * Use KeyPair class instead
- */
-export interface IKeyPair {
-  privateKey: Uint8Array;
-  publicKey: Uint8Array;
 }
