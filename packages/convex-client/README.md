@@ -31,17 +31,11 @@ import { Convex } from '@convex-world/convex-ts';
 const convex = new Convex('https://peer.convex.live');
 
 // Query an account balance (read-only, no keys needed)
-const result = await convex.query({
-  address: '#9',  // Convex Foundation address
-  source: '(balance #9)'
-});
-
+const result = await convex.query('(balance #9)');
 console.log('Balance:', result.value);
 
 // Query other network state
-const coinSupply = await convex.query({
-  source: '(call *registry* (lookup :CAD001))'  // Get registry info
-});
+const coinSupply = await convex.query('(call *registry* (lookup :CAD001))');
 ```
 
 ### Using Your Existing Account
@@ -251,25 +245,18 @@ Query network state without needing an account or keys:
 
 ```typescript
 // Query any account's balance
-const balance = await convex.query({
-  address: '#9',
-  source: '(balance #9)'
-});
+const balance = await convex.query('(balance #9)');
 
-// Query with different context address
+// Query smart contracts
+const registryInfo = await convex.query('(call *registry* (cns-resolve :example.domain))');
+
+// Execute Convex Lisp expressions
+const mathResult = await convex.query('(+ 1 2 3)');  // Returns 6
+
+// Query with address context (use object form when needed)
 const result = await convex.query({
   address: '#1678',
   source: '*balance*'  // Uses context address
-});
-
-// Query smart contracts
-const registryInfo = await convex.query({
-  source: '(call *registry* (cns-resolve :example.domain))'
-});
-
-// Execute Convex Lisp expressions
-const mathResult = await convex.query({
-  source: '(+ 1 2 3)'  // Returns 6
 });
 
 console.log('Result:', result.value);
@@ -580,9 +567,7 @@ async function displayNetworkStats() {
   }
 
   // Query global state
-  const supply = await convex.query({
-    source: '(call *registry* (lookup :CAD001))'
-  });
+  const supply = await convex.query('(call *registry* (lookup :CAD001))');
   console.log('Coin supply:', supply.value);
 }
 ```

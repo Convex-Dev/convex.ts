@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "moduleResolution": "NodeNext",
     "forceConsistentCasingInFileNames": true,
-    "types": ["jest","node"]
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test.ts", "src/__tests__/**/*"]

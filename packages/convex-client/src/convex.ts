@@ -239,11 +239,14 @@ export class Convex {
 
   /**
    * Execute a query on the network
-   * @param query Query parameters
+   * @param query Query parameters or Convex Lisp source string
    */
-  async query(query: Query): Promise<Result> {
+  async query(query: Query | string): Promise<Result> {
     try {
-      const response = await this.http.post('/api/v1/query', query);
+      const queryParams = typeof query === 'string'
+        ? { source: query }
+        : query;
+      const response = await this.http.post('/api/v1/query', queryParams);
       return response.data;
     } catch (error) {
       throw this.handleError(error);
