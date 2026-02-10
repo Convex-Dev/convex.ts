@@ -79,10 +79,10 @@ import { Convex, KeyPair } from '@convex-world/convex-ts';
 
 // Derive key pair from your Ed25519 seed (32 bytes)
 const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = await KeyPair.fromSeed(seed);
+const keyPair = KeyPair.fromSeed(seed);
 
 // Or from hex seed
-const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
+const keyPair = KeyPair.fromSeed('0123456789abcdef...');
 
 // Connect and use your account
 const convex = new Convex('https://peer.convex.live');
@@ -155,17 +155,17 @@ import { KeyPair } from '@convex-world/convex-ts';
 
 // You need:
 // 1. Your account address (e.g., "#1678")
-// 2. Your Ed25519 private key (public key is derived)
+// 2. Your Ed25519 seed (32 bytes)
 
-// From private key hex string (recommended)
-const keyPair = await KeyPair.fromPrivateKey('your-private-key-hex');
+// From seed hex string (recommended)
+const keyPair = KeyPair.fromSeed('your-32-byte-seed-hex');
 
-// Or from private key bytes
-const keyPair = await KeyPair.fromPrivateKey(
-  new Uint8Array([/* 32 private key bytes */])
+// Or from seed bytes
+const keyPair = KeyPair.fromSeed(
+  new Uint8Array([/* 32 seed bytes */])
 );
 
-// Note: Public key is automatically derived from private key
+// Note: Public key is automatically derived from seed
 convex.setAccount('#1678', keyPair);
 ```
 
@@ -205,7 +205,7 @@ convex.setAddress('#1678');
 Same signer can sign for multiple accounts:
 
 ```typescript
-const keyPair = await KeyPair.fromSeed(mySeed);
+const keyPair = KeyPair.fromSeed(mySeed);
 convex.setSigner(keyPair);  // Set signer once
 
 // Use different addresses with same signer
@@ -225,10 +225,10 @@ import { KeyPair } from '@convex-world/convex-ts';
 
 // From bytes
 const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = await KeyPair.fromSeed(seed);
+const keyPair = KeyPair.fromSeed(seed);
 
 // Or from hex string
-const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
+const keyPair = KeyPair.fromSeed('0123456789abcdef...');
 
 convex.setAccount('#1678', keyPair);
 ```
@@ -347,7 +347,7 @@ await convex.transact({
 import { KeyPair } from '@convex-world/convex-ts';
 
 // Generate random key pair
-const keyPair = await KeyPair.generate();
+const keyPair = KeyPair.generate();
 
 // Access keys as hex strings (convenient)
 console.log('Public key:', keyPair.publicKeyHex);
@@ -359,10 +359,10 @@ console.log('Private key bytes:', keyPair.privateKey);
 
 // Generate from seed (deterministic)
 const seed = new Uint8Array(32);  // Your seed bytes
-const keyPair = await KeyPair.fromSeed(seed);
+const keyPair = KeyPair.fromSeed(seed);
 
 // Or from hex seed
-const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
+const keyPair = KeyPair.fromSeed('0123456789abcdef...');
 
 // Import from hex strings
 const keyPair = await KeyPair.fromHex({
@@ -498,7 +498,7 @@ async function main() {
   try {
     // Set up with your account using seed from environment
     const seedHex = process.env.CONVEX_SEED!;
-    const keyPair = await KeyPair.fromSeed(seedHex);
+    const keyPair = KeyPair.fromSeed(seedHex);
     convex.setAccount('#1678', keyPair);
 
     // Check balance

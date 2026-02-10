@@ -88,7 +88,7 @@ export default function KeyPairGeneratorPage() {
     if (!publicKey || !privateKey) return;
     if (!newAlias) return;
     try {
-      const kp = await KeyPair.fromPrivateKey(hexToUint8(privateKey));
+      const kp = KeyPair.fromSeed(hexToUint8(privateKey));
       await ks.storeKeyPair(newAlias, kp, newPassword);
       await refreshAliases();
       setUnlocked((m) => ({ ...m, [newAlias]: null }));

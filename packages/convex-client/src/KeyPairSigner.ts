@@ -10,11 +10,11 @@ import { sign, hexToBytes, bytesToHex } from './crypto.js';
  *
  * @example
  * ```typescript
- * const keyPair = await KeyPair.generate();
+ * const keyPair = KeyPair.generate();
  * const signer = new KeyPairSigner(keyPair);
  *
  * // Use with Convex
- * convex.useAccount('#1678', signer);
+ * convex.setAccount('#1678', signer);
  * ```
  */
 export class KeyPairSigner implements Signer {

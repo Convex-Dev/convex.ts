@@ -137,8 +137,8 @@ export class LocalStorageKeyStore extends KeyStore {
     if (!parsed) return null;
     const { publicKey, iv, salt, encryptedPrivateKey, iterations } = parsed;
     try {
-      const priv = await decryptData(jsonArrayToBytes(encryptedPrivateKey), jsonArrayToBytes(iv), password, jsonArrayToBytes(salt), iterations ?? 100_000);
-      return await KeyPair.fromPrivateKey(priv);
+      const seed = await decryptData(jsonArrayToBytes(encryptedPrivateKey), jsonArrayToBytes(iv), password, jsonArrayToBytes(salt), iterations ?? 100_000);
+      return KeyPair.fromSeed(seed);
     } catch (e) {
       console.error('Decryption failed:', e);
       return null;
@@ -200,7 +200,7 @@ export class LocalStorageKeyStore extends KeyStore {
     if (typeof aliasOrPublicKey === 'string') {
       const parsed = this.readSession(aliasOrPublicKey);
       if (!parsed) return null;
-      return await KeyPair.fromPrivateKey(jsonArrayToBytes(parsed.privateKey));
+      return KeyPair.fromSeed(jsonArrayToBytes(parsed.privateKey));
     }
 
     // Lookup by public key value
@@ -212,7 +212,7 @@ export class LocalStorageKeyStore extends KeyStore {
       if (!parsed) continue;
       const storedPub = jsonArrayToBytes(parsed.publicKey);
       if (bytesEqual(storedPub, target)) {
-        return await KeyPair.fromPrivateKey(jsonArrayToBytes(parsed.privateKey));
+        return KeyPair.fromSeed(jsonArrayToBytes(parsed.privateKey));
       }
     }
     return null;

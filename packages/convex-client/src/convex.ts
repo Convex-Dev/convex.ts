@@ -50,7 +50,7 @@ export class Convex {
   async createAccount(initialBalance?: number): Promise<AccountInfo> {
     try {
       // Generate new key pair and set as signer
-      const keyPair = await KeyPair.generate();
+      const keyPair = KeyPair.generate();
       this.setSigner(keyPair);
 
       const publicKey = await this.signer!.getPublicKey();
