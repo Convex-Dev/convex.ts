@@ -119,6 +119,30 @@ export class Convex {
   }
 
   /**
+   * Use an existing account with a key pair
+   * @param address Account address (e.g., "#1678")
+   * @param keyPair Ed25519 key pair
+   */
+  useAccount(address: string, keyPair: KeyPair): void {
+    this.address = address;
+    this.keyPair = keyPair;
+    this.accountInfo = {
+      address,
+      balance: 0,
+      sequence: 0,
+      publicKey: Buffer.from(keyPair.publicKey).toString('hex')
+    };
+  }
+
+  /**
+   * Submit a transaction to the network (alias for submitTransaction)
+   * @param tx Transaction details
+   */
+  async transact(tx: Transaction): Promise<TransactionResult> {
+    return this.submitTransaction(tx);
+  }
+
+  /**
    * Get the current key pair
    */
   getKeyPair(): KeyPair {

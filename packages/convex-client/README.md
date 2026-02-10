@@ -20,31 +20,74 @@
 npm install @convex-world/convex-ts
 ```
 
-### Your First Convex Application
+### Read-Only Query (No Account Needed)
+
+The simplest way to get started is with read-only queries:
 
 ```typescript
 import { Convex } from '@convex-world/convex-ts';
 
 // Connect to the Convex network
-const convex = new Convex('https://convex.world');
+const convex = new Convex('https://peer.convex.live');
 
-// Create a new account with initial balance
-const account = await convex.createAccount(10_000_000);
-console.log('New account address:', account.address);
-console.log('Initial balance:', account.balance, 'copper coins');
+// Query an account balance (read-only, no keys needed)
+const result = await convex.query({
+  address: '#9',  // Convex Foundation address
+  source: '(balance #9)'
+});
+
+console.log('Balance:', result.value);
+
+// Query other network state
+const coinSupply = await convex.query({
+  source: '(call *registry* (lookup :CAD001))'  // Get registry info
+});
+```
+
+### Using Your Existing Account
+
+If you have a Convex account and private key:
+
+```typescript
+import { Convex } from '@convex-world/convex-ts';
+
+// Connect to peer
+const convex = new Convex('https://peer.convex.live');
+
+// Set up with your existing account
+const myKeyPair = {
+  publicKey: new Uint8Array([/* your public key bytes */]),
+  privateKey: new Uint8Array([/* your private key bytes */])
+};
+
+convex.useAccount('#1678', myKeyPair);
+
+// Now you can transact
+const result = await convex.transact({
+  to: '#456',
+  amount: 1_000_000,  // 1 Convex Coin (amounts are in copper)
+  data: { memo: 'Payment' }
+});
+
+console.log('Transaction hash:', result.hash);
+```
+
+### Loading Keys from Seed
+
+```typescript
+import { Convex, generateKeyPairFromSeed } from '@convex-world/convex-ts';
+
+// Derive key pair from your Ed25519 seed
+const seed = new Uint8Array([/* your 32-byte seed */]);
+const keyPair = await generateKeyPairFromSeed(seed);
+
+// Connect and use your account
+const convex = new Convex('https://peer.convex.live');
+convex.useAccount('#1678', keyPair);
 
 // Query your balance
 const info = await convex.getAccountInfo();
-console.log('Current balance:', info.balance);
-
-// Submit a transaction
-const result = await convex.submitTransaction({
-  to: '#123',
-  amount: 1_000_000,
-  data: { memo: 'My first transaction!' }
-});
-
-console.log('Transaction completed:', result.hash);
+console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
 ```
 
 ## 🎯 What is Convex?
@@ -61,15 +104,15 @@ Learn more in the [Convex Documentation](https://docs.convex.world).
 
 ## ✨ Features
 
-- 🔐 **Account Management** - Create and manage self-sovereign accounts
+- 🔍 **Read-Only Queries** - Query network state without an account
+- 🔐 **Account Management** - Use your existing Convex account
 - 🔑 **Ed25519 Cryptography** - Industry-standard key generation and signing
 - 💸 **Transactions** - Submit and track transactions with full type safety
-- 🔍 **Network Queries** - Execute Convex Lisp queries on network state
 - 🎨 **Identicons** - Generate unique visual identifiers for addresses
 - 💾 **Secure Keystore** - Encrypted key storage and management
 - 📘 **Full TypeScript Support** - Complete type definitions included
 - 🌐 **Modern ESM** - ES module support for modern JavaScript
-- 🧪 **Production Ready** - Battle-tested and used in production applications
+- 🧪 **Production Ready** - Used with live Convex networks
 
 ## 📖 Complete API Reference
 
@@ -79,10 +122,10 @@ Learn more in the [Convex Documentation](https://docs.convex.world).
 import { Convex } from '@convex-world/convex-ts';
 
 // Connect to production network
-const convex = new Convex('https://convex.world');
+const convex = new Convex('https://peer.convex.live');
 
 // Connect with custom options
-const convex = new Convex('https://convex.world', {
+const convex = new Convex('https://peer.convex.live', {
   timeout: 30000,  // Request timeout in milliseconds
   headers: {
     'X-Custom-Header': 'value'
@@ -90,19 +133,41 @@ const convex = new Convex('https://convex.world', {
 });
 ```
 
-### Account Management
+**Network URLs:**
+- Production: `https://peer.convex.live`
+- Testnet: `https://testnet.convex.live` (has faucet for testing)
+- Local: `http://localhost:8080` (for development)
 
-#### Creating an Account
+### Account Setup
+
+#### Using an Existing Account
+
+Most users already have a Convex account. Set it up like this:
 
 ```typescript
-// Create account with initial balance (in copper coins)
-// 1 Convex Coin = 1,000,000 copper coins
-const account = await convex.createAccount(10_000_000);
+// You need:
+// 1. Your account address (e.g., "#1678")
+// 2. Your Ed25519 key pair
 
-console.log('Address:', account.address);      // e.g., "#1337"
-console.log('Balance:', account.balance);      // 10000000
-console.log('Sequence:', account.sequence);    // 0
-console.log('Public Key:', account.publicKey); // hex string
+const keyPair = {
+  publicKey: new Uint8Array([/* 32 bytes */]),
+  privateKey: new Uint8Array([/* 32 bytes */])
+};
+
+convex.useAccount('#1678', keyPair);
+```
+
+#### Deriving from Seed
+
+If you have an Ed25519 seed (32 bytes):
+
+```typescript
+import { generateKeyPairFromSeed } from '@convex-world/convex-ts';
+
+const seed = new Uint8Array([/* your 32-byte seed */]);
+const keyPair = await generateKeyPairFromSeed(seed);
+
+convex.useAccount('#1678', keyPair);
 ```
 
 #### Getting Account Information
@@ -110,28 +175,54 @@ console.log('Public Key:', account.publicKey); // hex string
 ```typescript
 const info = await convex.getAccountInfo();
 
-console.log('Current balance:', info.balance);
-console.log('Transaction sequence:', info.sequence);
+console.log('Address:', info.address);
+console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
+console.log('Sequence:', info.sequence);  // Transaction counter
 ```
 
-#### Accessing Your Keys
+> **Note:** Amounts are in "copper coins" where 1 Convex Coin = 1,000,000 copper.
+
+### Queries (Read-Only)
+
+Query network state without needing an account or keys:
 
 ```typescript
-const keyPair = convex.getKeyPair();
+// Query any account's balance
+const balance = await convex.query({
+  address: '#9',
+  source: '(balance #9)'
+});
 
-console.log('Public key:', Buffer.from(keyPair.publicKey).toString('hex'));
-// Private key is also available but should be kept secure!
+// Query with different context address
+const result = await convex.query({
+  address: '#1678',
+  source: '*balance*'  // Uses context address
+});
+
+// Query smart contracts
+const registryInfo = await convex.query({
+  source: '(call *registry* (cns-resolve :example.domain))'
+});
+
+// Execute Convex Lisp expressions
+const mathResult = await convex.query({
+  source: '(+ 1 2 3)'  // Returns 6
+});
+
+console.log('Result:', result.value);
 ```
+
+Learn more about Convex Lisp in the [documentation](https://docs.convex.world).
 
 ### Transactions
 
-#### Submitting a Transaction
+Submit transactions to modify network state:
 
 ```typescript
-const result = await convex.submitTransaction({
+const result = await convex.transact({
   to: '#456',              // Destination address
-  amount: 1_000_000,       // Amount in copper coins
-  sequence: 1,             // Optional: transaction sequence number
+  amount: 1_000_000,       // Amount in copper (1 Convex Coin)
+  sequence: undefined,     // Optional: auto-increments
   data: {                  // Optional: additional data
     memo: 'Payment for services',
     invoice: 'INV-001'
@@ -139,38 +230,35 @@ const result = await convex.submitTransaction({
 });
 
 if (result.status === 'success') {
-  console.log('Transaction hash:', result.hash);
-  console.log('Result:', result.result);
+  console.log('✅ Transaction successful!');
+  console.log('   Hash:', result.hash);
+  console.log('   Result:', result.result);
 } else {
-  console.error('Transaction failed:', result.error);
+  console.error('❌ Transaction failed:', result.error);
 }
 ```
 
-### Queries
-
-Execute Convex Lisp queries to read network state:
+**Common Transaction Patterns:**
 
 ```typescript
-// Query your own balance
-const balance = await convex.query({
-  source: '(balance *address*)'
+// Simple transfer
+await convex.transact({ to: '#456', amount: 1_000_000 });
+
+// Call a smart contract
+await convex.transact({
+  to: '#789',  // Contract address
+  data: {
+    call: '(my-function arg1 arg2)'
+  }
 });
 
-// Query another account's balance
-const otherBalance = await convex.query({
-  address: '#123',
-  source: '(balance #123)'
+// Deploy code
+await convex.transact({
+  data: {
+    code: '(def my-function (fn [x] (* x 2)))'
+  }
 });
-
-// More complex queries
-const result = await convex.query({
-  source: '(map inc [1 2 3 4 5])'  // Returns [2 3 4 5 6]
-});
-
-console.log('Query result:', result.value);
 ```
-
-Learn more about Convex Lisp in the [documentation](https://docs.convex.world).
 
 ### Cryptography
 
@@ -179,10 +267,17 @@ Learn more about Convex Lisp in the [documentation](https://docs.convex.world).
 ```typescript
 import { generateKeyPair } from '@convex-world/convex-ts';
 
+// Generate random key pair
 const keyPair = await generateKeyPair();
 
 console.log('Public key:', Buffer.from(keyPair.publicKey).toString('hex'));
 console.log('Private key:', Buffer.from(keyPair.privateKey).toString('hex'));
+
+// Generate from seed (deterministic)
+import { generateKeyPairFromSeed } from '@convex-world/convex-ts';
+
+const seed = new Uint8Array(32);  // Your seed bytes
+const keyPair = await generateKeyPairFromSeed(seed);
 ```
 
 #### Signing and Verification
@@ -249,8 +344,7 @@ import type {
   Transaction,
   TransactionResult,
   Query,
-  Result,
-  Address
+  Result
 } from '@convex-world/convex-ts';
 
 // Type-safe development
@@ -261,10 +355,8 @@ const tx: Transaction = {
 
 const handleResult = (result: TransactionResult) => {
   if (result.status === 'success') {
-    // TypeScript knows result.hash exists here
     console.log(result.hash);
   } else {
-    // TypeScript knows result.error exists here
     console.error(result.error);
   }
 };
@@ -276,11 +368,14 @@ All API methods can throw errors. Always wrap in try-catch:
 
 ```typescript
 try {
-  const account = await convex.createAccount(10_000_000);
-  console.log('Account created:', account.address);
+  const result = await convex.transact({
+    to: '#123',
+    amount: 1_000_000
+  });
+  console.log('Success:', result.hash);
 } catch (error) {
   if (error instanceof Error) {
-    console.error('Failed to create account:', error.message);
+    console.error('Transaction failed:', error.message);
   }
 }
 ```
@@ -297,44 +392,41 @@ Common error scenarios:
 ### Complete Application
 
 ```typescript
-import { Convex, generateKeyPair } from '@convex-world/convex-ts';
+import { Convex, generateKeyPairFromSeed } from '@convex-world/convex-ts';
 
-async function transferFunds() {
+async function main() {
   // Connect to network
-  const convex = new Convex('https://convex.world');
+  const convex = new Convex('https://peer.convex.live');
 
   try {
-    // Create account with 10 Convex Coins
-    const account = await convex.createAccount(10_000_000);
-    console.log('✅ Account created:', account.address);
-    console.log('   Balance:', account.balance / 1_000_000, 'Convex Coins');
+    // Set up with your account
+    const seed = Buffer.from(process.env.CONVEX_SEED!, 'hex');
+    const keyPair = await generateKeyPairFromSeed(seed);
+    convex.useAccount('#1678', keyPair);
 
-    // Wait a moment for network propagation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check balance
+    const info = await convex.getAccountInfo();
+    console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
 
-    // Transfer 1 Convex Coin to another address
-    const result = await convex.submitTransaction({
+    // Transfer funds
+    const result = await convex.transact({
       to: '#456',
       amount: 1_000_000,
-      data: { memo: 'Transfer example' }
+      data: { memo: 'Payment' }
     });
 
     if (result.status === 'success') {
       console.log('✅ Transaction successful!');
       console.log('   Hash:', result.hash);
-
-      // Check new balance
-      const info = await convex.getAccountInfo();
-      console.log('   New balance:', info.balance / 1_000_000, 'Convex Coins');
     } else {
-      console.error('❌ Transaction failed:', result.error);
+      console.error('❌ Failed:', result.error);
     }
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : error);
+    console.error('Error:', error);
   }
 }
 
-transferFunds();
+main();
 ```
 
 ### Using with React
@@ -343,14 +435,14 @@ transferFunds();
 import { useState, useEffect } from 'react';
 import { Convex } from '@convex-world/convex-ts';
 
-function ConvexWallet() {
-  const [convex] = useState(() => new Convex('https://convex.world'));
+function ConvexWallet({ accountAddress, keyPair }) {
+  const [convex] = useState(() => new Convex('https://peer.convex.live'));
   const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadAccount() {
       try {
-        const account = await convex.createAccount(10_000_000);
+        convex.useAccount(accountAddress, keyPair);
         const info = await convex.getAccountInfo();
         setBalance(info.balance);
       } catch (error) {
@@ -358,7 +450,7 @@ function ConvexWallet() {
       }
     }
     loadAccount();
-  }, [convex]);
+  }, [convex, accountAddress, keyPair]);
 
   return (
     <div>
@@ -370,6 +462,35 @@ function ConvexWallet() {
       )}
     </div>
   );
+}
+```
+
+### Read-Only Dashboard
+
+Query network data without authentication:
+
+```typescript
+import { Convex } from '@convex-world/convex-ts';
+
+async function displayNetworkStats() {
+  const convex = new Convex('https://peer.convex.live');
+
+  // Query multiple accounts
+  const addresses = ['#9', '#10', '#11'];
+
+  for (const addr of addresses) {
+    const result = await convex.query({
+      address: addr,
+      source: `(balance ${addr})`
+    });
+    console.log(`${addr}: ${result.value} copper`);
+  }
+
+  // Query global state
+  const supply = await convex.query({
+    source: '(call *registry* (lookup :CAD001))'
+  });
+  console.log('Coin supply:', supply.value);
 }
 ```
 
