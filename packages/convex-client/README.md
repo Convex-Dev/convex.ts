@@ -49,16 +49,22 @@ const coinSupply = await convex.query({
 If you have a Convex account and private key:
 
 ```typescript
-import { Convex } from '@convex-world/convex-ts';
+import { Convex, KeyPair } from '@convex-world/convex-ts';
 
 // Connect to peer
 const convex = new Convex('https://peer.convex.live');
 
-// Set up with your existing account
-const myKeyPair = {
-  publicKey: new Uint8Array([/* your public key bytes */]),
-  privateKey: new Uint8Array([/* your private key bytes */])
-};
+// Create KeyPair from your existing keys
+const myKeyPair = await KeyPair.fromHex({
+  publicKey: 'your-public-key-hex',
+  privateKey: 'your-private-key-hex'
+});
+
+// Or from bytes
+const myKeyPair = new KeyPair(
+  new Uint8Array([/* your private key bytes */]),
+  new Uint8Array([/* your public key bytes */])
+);
 
 convex.useAccount('#1678', myKeyPair);
 
@@ -75,11 +81,14 @@ console.log('Transaction hash:', result.hash);
 ### Loading Keys from Seed
 
 ```typescript
-import { Convex, generateKeyPairFromSeed } from '@convex-world/convex-ts';
+import { Convex, KeyPair } from '@convex-world/convex-ts';
 
-// Derive key pair from your Ed25519 seed
+// Derive key pair from your Ed25519 seed (32 bytes)
 const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = await generateKeyPairFromSeed(seed);
+const keyPair = await KeyPair.fromSeed(seed);
+
+// Or from hex seed
+const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
 
 // Connect and use your account
 const convex = new Convex('https://peer.convex.live');
@@ -148,14 +157,23 @@ convex.setTimeout(60000);  // 60 seconds
 Most users already have a Convex account. Set it up like this:
 
 ```typescript
+import { KeyPair } from '@convex-world/convex-ts';
+
 // You need:
 // 1. Your account address (e.g., "#1678")
 // 2. Your Ed25519 key pair
 
-const keyPair = {
-  publicKey: new Uint8Array([/* 32 bytes */]),
-  privateKey: new Uint8Array([/* 32 bytes */])
-};
+// From hex strings (recommended)
+const keyPair = await KeyPair.fromHex({
+  publicKey: 'your-public-key-hex',
+  privateKey: 'your-private-key-hex'
+});
+
+// Or from bytes
+const keyPair = new KeyPair(
+  new Uint8Array([/* 32 private key bytes */]),
+  new Uint8Array([/* 32 public key bytes */])
+);
 
 convex.useAccount('#1678', keyPair);
 ```
@@ -165,10 +183,14 @@ convex.useAccount('#1678', keyPair);
 If you have an Ed25519 seed (32 bytes):
 
 ```typescript
-import { generateKeyPairFromSeed } from '@convex-world/convex-ts';
+import { KeyPair } from '@convex-world/convex-ts';
 
+// From bytes
 const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = await generateKeyPairFromSeed(seed);
+const keyPair = await KeyPair.fromSeed(seed);
+
+// Or from hex string
+const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
 
 convex.useAccount('#1678', keyPair);
 ```
@@ -284,19 +306,37 @@ await convex.transact({
 #### Key Pair Generation
 
 ```typescript
-import { generateKeyPair } from '@convex-world/convex-ts';
+import { KeyPair } from '@convex-world/convex-ts';
 
 // Generate random key pair
-const keyPair = await generateKeyPair();
+const keyPair = await KeyPair.generate();
 
-console.log('Public key:', Buffer.from(keyPair.publicKey).toString('hex'));
-console.log('Private key:', Buffer.from(keyPair.privateKey).toString('hex'));
+// Access keys as hex strings (convenient)
+console.log('Public key:', keyPair.publicKeyHex);
+console.log('Private key:', keyPair.privateKeyHex);
+
+// Access keys as Uint8Array
+console.log('Public key bytes:', keyPair.publicKey);
+console.log('Private key bytes:', keyPair.privateKey);
 
 // Generate from seed (deterministic)
-import { generateKeyPairFromSeed } from '@convex-world/convex-ts';
-
 const seed = new Uint8Array(32);  // Your seed bytes
-const keyPair = await generateKeyPairFromSeed(seed);
+const keyPair = await KeyPair.fromSeed(seed);
+
+// Or from hex seed
+const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
+
+// Import from hex strings
+const keyPair = await KeyPair.fromHex({
+  publicKey: 'abcd1234...',
+  privateKey: '5678ef90...'
+});
+
+// Export as hex
+const { publicKey, privateKey } = keyPair.toHex();
+
+// Export as plain object (for backward compatibility)
+const obj = keyPair.toObject();  // { publicKey: Uint8Array, privateKey: Uint8Array }
 ```
 
 #### Signing and Verification
@@ -411,16 +451,16 @@ Common error scenarios:
 ### Complete Application
 
 ```typescript
-import { Convex, generateKeyPairFromSeed } from '@convex-world/convex-ts';
+import { Convex, KeyPair } from '@convex-world/convex-ts';
 
 async function main() {
   // Connect to network
   const convex = new Convex('https://peer.convex.live');
 
   try {
-    // Set up with your account
-    const seed = Buffer.from(process.env.CONVEX_SEED!, 'hex');
-    const keyPair = await generateKeyPairFromSeed(seed);
+    // Set up with your account using seed from environment
+    const seedHex = process.env.CONVEX_SEED!;
+    const keyPair = await KeyPair.fromSeed(seedHex);
     convex.useAccount('#1678', keyPair);
 
     // Check balance

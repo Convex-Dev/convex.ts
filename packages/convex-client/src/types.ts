@@ -11,12 +11,21 @@ export interface ClientOptions {
 export type Address = Uint8Array;
 
 /**
- * Ed25519 key pair
+ * Type that accepts either bytes or hex string
  */
-export interface KeyPair {
+export type Hex = Uint8Array | string;
+
+/**
+ * Ed25519 key pair (legacy interface, use KeyPair class instead)
+ * @deprecated Use KeyPair class from './KeyPair.js'
+ */
+export interface IKeyPair {
   privateKey: Uint8Array;
   publicKey: Uint8Array;
 }
+
+// Re-export for convenience
+export type { KeyPair } from './KeyPair.js';
 
 /**
  * Account information

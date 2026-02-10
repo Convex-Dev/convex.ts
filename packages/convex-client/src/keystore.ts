@@ -1,4 +1,4 @@
-import { KeyPair } from './types.js';
+import { KeyPair } from './KeyPair.js';
 
 /** Derive an AES-GCM key from a password and salt using PBKDF2 */
 async function deriveAesGcmKey(password: string, salt: Uint8Array, iterations: number = 100_000): Promise<CryptoKey> {
@@ -138,7 +138,7 @@ export class LocalStorageKeyStore extends KeyStore {
     const { publicKey, iv, salt, encryptedPrivateKey, iterations } = parsed;
     try {
       const priv = await decryptData(jsonArrayToBytes(encryptedPrivateKey), jsonArrayToBytes(iv), password, jsonArrayToBytes(salt), iterations ?? 100_000);
-      return { publicKey: jsonArrayToBytes(publicKey), privateKey: priv };
+      return new KeyPair(priv, jsonArrayToBytes(publicKey));
     } catch (e) {
       console.error('Decryption failed:', e);
       return null;
@@ -200,10 +200,10 @@ export class LocalStorageKeyStore extends KeyStore {
     if (typeof aliasOrPublicKey === 'string') {
       const parsed = this.readSession(aliasOrPublicKey);
       if (!parsed) return null;
-      return {
-        publicKey: jsonArrayToBytes(parsed.publicKey),
-        privateKey: jsonArrayToBytes(parsed.privateKey),
-      };
+      return new KeyPair(
+        jsonArrayToBytes(parsed.privateKey),
+        jsonArrayToBytes(parsed.publicKey)
+      );
     }
 
     // Lookup by public key value
@@ -215,10 +215,10 @@ export class LocalStorageKeyStore extends KeyStore {
       if (!parsed) continue;
       const storedPub = jsonArrayToBytes(parsed.publicKey);
       if (bytesEqual(storedPub, target)) {
-        return {
-          publicKey: storedPub,
-          privateKey: jsonArrayToBytes(parsed.privateKey),
-        };
+        return new KeyPair(
+          jsonArrayToBytes(parsed.privateKey),
+          storedPub
+        );
       }
     }
     return null;

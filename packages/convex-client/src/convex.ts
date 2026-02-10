@@ -1,21 +1,27 @@
 import axios, { AxiosInstance } from 'axios';
 import {
   ClientOptions,
-  KeyPair,
+  IKeyPair,
   AccountInfo,
   Transaction,
   TransactionResult,
   Query,
   Result
 } from './types.js';
+import { KeyPair } from './KeyPair.js';
 import { generateKeyPair, sign } from './crypto.js';
+
+/**
+ * Type that accepts either KeyPair class or plain object
+ */
+type KeyPairLike = KeyPair | IKeyPair;
 
 /**
  * Main class for interacting with the Convex network
  */
 export class Convex {
   private readonly http: AxiosInstance;
-  private keyPair?: KeyPair;
+  private keyPair?: IKeyPair;
   private accountInfo?: AccountInfo;
   private address?: string
 
@@ -121,16 +127,17 @@ export class Convex {
   /**
    * Use an existing account with a key pair
    * @param address Account address (e.g., "#1678")
-   * @param keyPair Ed25519 key pair
+   * @param keyPair Ed25519 key pair (KeyPair class or plain object)
    */
-  useAccount(address: string, keyPair: KeyPair): void {
+  useAccount(address: string, keyPair: KeyPairLike): void {
     this.address = address;
-    this.keyPair = keyPair;
+    // Convert KeyPair class to plain object if needed
+    this.keyPair = keyPair instanceof KeyPair ? keyPair.toObject() : keyPair;
     this.accountInfo = {
       address,
       balance: 0,
       sequence: 0,
-      publicKey: Buffer.from(keyPair.publicKey).toString('hex')
+      publicKey: Buffer.from(this.keyPair.publicKey).toString('hex')
     };
   }
 
@@ -176,8 +183,9 @@ export class Convex {
 
   /**
    * Get the current key pair
+   * @returns KeyPair as plain object (for backward compatibility)
    */
-  getKeyPair(): KeyPair {
+  getKeyPair(): IKeyPair {
     if (!this.keyPair) {
       throw new Error('No account created');
     }

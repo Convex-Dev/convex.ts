@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `KeyPair` class with static factory methods (`KeyPair.generate()`, `KeyPair.fromSeed()`, `KeyPair.fromHex()`)
+- `Hex` type for flexible input (accepts both `Uint8Array` and hex strings)
+- Convenience properties `publicKeyHex` and `privateKeyHex` for KeyPair
+- Export methods `toHex()` and `toObject()` for KeyPair serialization
+- `transfer()` convenience method for simple coin transfers
+- `transact(code: string)` overload for executing Convex Lisp code directly
+- `getSequence()` helper method to get current transaction sequence number
+- `setTimeout()` method to adjust request timeout
+
+### Changed
+- Updated README with modern KeyPair class examples
+- Deprecated legacy `generateKeyPair()` and `generateKeyPairFromSeed()` functions (use `KeyPair` class instead)
+- Keystore now returns `KeyPair` class instances instead of plain objects
+
+### Fixed
+- Keystore methods now properly construct `KeyPair` class instances
+
 ## [0.1.0] - 2026-02-10
 
 ### Added

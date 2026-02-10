@@ -1,11 +1,9 @@
 import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 ed.etc.sha512Sync = (data: Uint8Array): Uint8Array => sha512(data);
-import { KeyPair } from './types.js';
-
+import { type IKeyPair, type Hex } from './types.js';
 
 type Bytes = Uint8Array;
-type Hex = Bytes | string;
 
 /** Helper function to convert Uint8Array to hex string */ 
 export function bytesToHex(bytes: Bytes): string {
@@ -40,26 +38,32 @@ export function hexToBytes(input: Hex): Uint8Array {
   return input; // Already a Uint8Array
 }
 
-/** Generate a new Ed25519 key pair */
-export async function generateKeyPair(): Promise<KeyPair> {
+/**
+ * Generate a new Ed25519 key pair
+ * @deprecated Use KeyPair.generate() instead
+ */
+export async function generateKeyPair(): Promise<IKeyPair> {
   const privateKey = ed.utils.randomPrivateKey();
   const publicKey = await ed.getPublicKey(privateKey);
-  
+
   return {
     privateKey,
     publicKey
   };
 }
 
-/** Generate an Ed25519 key pair from a seed */
-export async function generateKeyPairFromSeed(seed: Uint8Array): Promise<KeyPair> {
+/**
+ * Generate an Ed25519 key pair from a seed
+ * @deprecated Use KeyPair.fromSeed() instead
+ */
+export async function generateKeyPairFromSeed(seed: Uint8Array): Promise<IKeyPair> {
   if (seed.length !== 32) {
     throw new Error('Seed must be exactly 32 bytes');
   }
-  
+
   const privateKey = seed;
   const publicKey = await ed.getPublicKey(privateKey);
-  
+
   return {
     privateKey,
     publicKey
