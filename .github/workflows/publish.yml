@@ -65,7 +65,7 @@ jobs:
       - name: Publish to npm
         run: |
           cd packages/convex-client
-          pnpm publish --access=public --tag ${{ steps.release.outputs.tag }} --no-git-checks --provenance
+          npm publish --access=public --tag ${{ steps.release.outputs.tag }} --provenance
 
       - name: Extract changelog (production only)
         if: steps.release.outputs.type == 'production'
