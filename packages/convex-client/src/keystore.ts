@@ -193,9 +193,9 @@ export class LocalStorageKeyStore extends KeyStore {
    * @param alias The alias to look up (when string overload is used)
    * @returns The unlocked key pair, or null if not found
    */
-  getUnlockedKeyPair(alias: string): Promise<KeyPair | null>;
-  getUnlockedKeyPair(publicKey: Uint8Array): Promise<KeyPair | null>;
-  async getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): Promise<KeyPair | null> {
+  getUnlockedKeyPair(alias: string): KeyPair | null;
+  getUnlockedKeyPair(publicKey: Uint8Array): KeyPair | null;
+  getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): KeyPair | null {
     // Lookup by alias
     if (typeof aliasOrPublicKey === 'string') {
       const parsed = this.readSession(aliasOrPublicKey);
@@ -231,10 +231,10 @@ export class LocalStorageKeyStore extends KeyStore {
   }
 
   /** Check if a key is currently unlocked (by alias or public key). */
-  isUnlocked(alias: string): Promise<boolean>;
-  isUnlocked(publicKey: Uint8Array): Promise<boolean>;
-  async isUnlocked(aliasOrPublicKey: string | Uint8Array): Promise<boolean> {
-    const kp = await this.getUnlockedKeyPair(aliasOrPublicKey as any);
+  isUnlocked(alias: string): boolean;
+  isUnlocked(publicKey: Uint8Array): boolean;
+  isUnlocked(aliasOrPublicKey: string | Uint8Array): boolean {
+    const kp = this.getUnlockedKeyPair(aliasOrPublicKey as any);
     return kp !== null;
   }
 

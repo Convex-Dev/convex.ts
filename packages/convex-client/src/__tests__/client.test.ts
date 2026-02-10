@@ -1,22 +1,22 @@
 import { Convex } from '../convex.js';
 import axios from 'axios';
+import { vi } from 'vitest';
+import type { Mock } from 'vitest';
 
-import { jest } from '@jest/globals';
-
-jest.mock('axios', () => ({
-  create: jest.fn(),
-  default: jest.fn(),
-  isAxiosError: jest.fn()
+vi.mock('axios', () => ({
+  create: vi.fn(),
+  default: vi.fn(),
+  isAxiosError: vi.fn()
 }));
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as any;
 
 // Create a mock AxiosInstance, as returned by mocked axios.create()
 const mockAxiosInstance = {
-  post: jest.fn(),
-  get: jest.fn(),
-  // Add other methods like delete, put, patch if your Convex class uses them
-} as unknown as jest.Mocked<import('axios').AxiosInstance>;
+  post: vi.fn(),
+  get: vi.fn(),
+  defaults: { timeout: 30000 }
+} as any;
 
 const CONVEX_PEER_URL = process.env.CONVEX_PEER_URL || 'http://peer.convex.live:8080';
 
@@ -29,13 +29,13 @@ describe('Convex', () => {
     mockAxiosInstance.get.mockReset();
 
     // Make axios.create() return our mock AxiosInstance
-    const mockCreate = jest.fn().mockReturnValue(mockAxiosInstance);
+    const mockCreate = vi.fn().mockReturnValue(mockAxiosInstance);
     (axios as any).create = mockCreate;
     client = new Convex(CONVEX_PEER_URL);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('query', () => {

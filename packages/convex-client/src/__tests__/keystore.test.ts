@@ -1,14 +1,4 @@
-import { jest } from '@jest/globals';
 import { LocalStorageKeyStore } from '../keystore.js';
-
-// Mock ed25519-heavy crypto to avoid ESM parsing issues from node_modules in Jest
-jest.mock('../crypto.js', () => ({
-  generateKeyPair: async () => ({
-    publicKey: new Uint8Array([1, 2, 3, 4]),
-    privateKey: new Uint8Array([5, 6, 7, 8])
-  })
-}));
-
 import { generateKeyPair } from '../crypto.js';
 
 // Ensure WebCrypto is available for tests (Node 18+ provides it via node:crypto)
@@ -64,7 +54,7 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('generates, stores, and restores a key pair with password', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('alice', kp, 'correct horse battery staple');
 
     const restored = await ks.getKeyPair('alice', 'correct horse battery staple');
@@ -76,7 +66,7 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('fails to restore with wrong password', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('bob', kp, 'right-password');
 
     const wrong = await ks.getKeyPair('bob', 'wrong-password');
@@ -85,10 +75,10 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('gets public key without password', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('charlie', kp, 'password');
 
-    const publicKey = await ks.getPublicKey('charlie');
+    const publicKey = ks.getPublicKey('charlie');
     expect(publicKey).not.toBeNull();
     if (!publicKey) throw new Error('publicKey should not be null');
     expect(Buffer.from(publicKey)).toEqual(Buffer.from(kp.publicKey));
@@ -96,13 +86,13 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('returns null for non-existent alias', async () => {
     const ks = new LocalStorageKeyStore();
-    const publicKey = await ks.getPublicKey('nonexistent');
+    const publicKey = ks.getPublicKey('nonexistent');
     expect(publicKey).toBeNull();
   });
 
   (hasWebCrypto ? it : it.skip)('unlocks to sessionStorage and locks removes it', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('dave', kp, 'pw');
 
     // Simulate unlock by decrypting and storing in sessionStorage
@@ -126,7 +116,7 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('does not persist unlocked private key in localStorage', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('erin', kp, 'pw');
 
     // The stored record in localStorage must not contain plaintext privateKey
@@ -152,7 +142,7 @@ describe('LocalStorageKeyStore', () => {
 
   (hasWebCrypto ? it : it.skip)('getUnlockedKeyPair works by public key (success)', async () => {
     const ks = new LocalStorageKeyStore();
-    const kp = await generateKeyPair();
+    const kp = generateKeyPair();
     await ks.storeKeyPair('frank', kp, 'pw');
 
     // unlock and store in session
