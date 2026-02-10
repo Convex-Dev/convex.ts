@@ -34,29 +34,24 @@ pnpm publish --access=public
    - Look for "Publishing access" section
    - Click "Configure trusted publishing"
 
-3. **Add GitHub Actions Publisher (for production releases):**
+3. **Add GitHub Actions Publisher:**
    - Click "Add" or "New publisher"
    - Select provider: **GitHub Actions**
    - Fill in:
      - **Owner:** `Convex-Dev`
      - **Repository:** `convex.ts`
-     - **Workflow file:** `release.yml`
+     - **Workflow file:** `publish.yml`
      - **Environment:** Leave blank
    - Click "Add publisher"
 
-4. **Add another publisher (for snapshot releases):**
-   - Click "Add" again
-   - Same settings but change:
-     - **Workflow file:** `snapshot.yml`
-   - Click "Add publisher"
+   Note: This single workflow handles both production releases (on tags) and snapshots (on develop branch)
 
 ### Step 3: Verify Workflows
 
 The workflows are already configured with `--provenance` flag and `id-token: write` permission.
 
 **Files already configured:**
-- ✅ `.github/workflows/release.yml`
-- ✅ `.github/workflows/snapshot.yml`
+- ✅ `.github/workflows/publish.yml` (handles both releases and snapshots)
 
 ### Step 4: Test
 

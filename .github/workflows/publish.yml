@@ -1,0 +1,87 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - develop  # Triggers snapshot releases
+    tags:
+      - 'v*'     # Triggers production releases
+
+permissions:
+  contents: write
+  id-token: write  # Required for npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Determine release type
+        id: release
+        run: |
+          if [[ "$GITHUB_REF" =~ ^refs/tags/v ]]; then
+            echo "type=production" >> $GITHUB_OUTPUT
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./packages/convex-client/package.json').version")
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            SNAPSHOT_VERSION="${VERSION}-dev.${SHORT_SHA}.$(date +%s)"
+            echo "type=snapshot" >> $GITHUB_OUTPUT
+            echo "version=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version for snapshot
+        if: steps.release.outputs.type == 'snapshot'
+        run: |
+          cd packages/convex-client
+          node -e "const pkg = require('./package.json'); pkg.version = '${{ steps.release.outputs.version }}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+
+      - name: Publish to npm
+        run: |
+          cd packages/convex-client
+          pnpm publish --access=public --tag ${{ steps.release.outputs.tag }} --no-git-checks --provenance
+
+      - name: Extract changelog (production only)
+        if: steps.release.outputs.type == 'production'
+        id: changelog
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          CHANGELOG=$(sed -n "/## \[$VERSION\]/,/## \[/p" packages/convex-client/CHANGELOG.md | sed '1d;$d')
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.release.outputs.type == 'production' && format('Release v{0}', steps.release.outputs.version) || format('Snapshot {0}', steps.release.outputs.version) }}
+          tag_name: ${{ steps.release.outputs.type == 'production' && github.ref_name || format('snapshot-{0}', steps.release.outputs.version) }}
+          body: ${{ steps.release.outputs.type == 'production' && steps.changelog.outputs.notes || format('🚧 Development snapshot from commit {0}', github.sha) }}
+          draft: false
+          prerelease: ${{ steps.release.outputs.prerelease == 'true' }}
