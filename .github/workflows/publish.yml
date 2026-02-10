@@ -28,6 +28,12 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
+
+      - name: Verify npm version
+        run: npm --version
+
       - name: Install dependencies
         run: pnpm install
 
@@ -61,6 +67,12 @@ jobs:
         run: |
           cd packages/convex-client
           node -e "const pkg = require('./package.json'); pkg.version = '${{ steps.release.outputs.version }}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+
+      - name: Debug GitHub context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Workflow: ${{ github.workflow_ref }}"
 
       - name: Publish to npm
         run: |
