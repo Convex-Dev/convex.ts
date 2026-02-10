@@ -84,7 +84,7 @@ Network history is automatically saved to `localStorage` under the key `'convex-
 
 ```tsx
 import { NetworkSelector, NetworkConfig } from '@convex-world/convex-react';
-import { ConvexClient } from '@convex-world/convex-client';
+import { ConvexClient } from '@convex-world/convex-ts';
 
 function ConvexApp() {
   const [client, setClient] = useState<ConvexClient | null>(null);

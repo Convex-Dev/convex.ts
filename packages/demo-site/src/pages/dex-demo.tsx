@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import Button from "../components/Button";
 import { NetworkSelector, NetworkConfig, Identicon } from "@convex-world/convex-react";
-import { LocalStorageKeyStore, bytesToHex, Convex } from "@convex-world/convex-client";
+import { LocalStorageKeyStore, bytesToHex, Convex } from "@convex-world/convex-ts";
 
 export default function DexDemoPage() {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkConfig | null>(null);

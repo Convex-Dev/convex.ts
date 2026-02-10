@@ -1,13 +1,39 @@
 {
-  "name": "@convex-world/convex-client",
+  "name": "@convex-world/convex-ts",
   "version": "0.1.0",
+  "description": "TypeScript/JavaScript client library for the Convex decentralized lattice network",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md",
+    "README.md"
   ],
+  "keywords": [
+    "convex",
+    "blockchain",
+    "dlt",
+    "distributed-ledger",
+    "lattice",
+    "decentralized",
+    "typescript",
+    "web3",
+    "crypto",
+    "ed25519"
+  ],
+  "author": "Convex Foundation",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Convex-Dev/convex.ts.git",
+    "directory": "packages/convex-client"
+  },
+  "homepage": "https://github.com/Convex-Dev/convex.ts#readme",
+  "bugs": {
+    "url": "https://github.com/Convex-Dev/convex.ts/issues"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./jest.config.js"

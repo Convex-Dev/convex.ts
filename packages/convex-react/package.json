@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@convex-world/convex-client": "workspace:*",
+    "@convex-world/convex-ts": "workspace:*",
     "react": "^18.0.0"
   },
   "devDependencies": {

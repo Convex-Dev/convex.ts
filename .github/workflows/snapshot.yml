@@ -1,0 +1,118 @@
+name: Snapshot Release
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Get package version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./packages/convex-client/package.json').version")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          SNAPSHOT_VERSION="${VERSION}-dev.${SHORT_SHA}.$(date +%s)"
+          echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+          echo "BASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package version
+        run: |
+          cd packages/convex-client
+          npm version ${{ steps.version.outputs.SNAPSHOT_VERSION }} --no-git-tag-version
+
+      - name: Publish snapshot to npm
+        run: |
+          cd packages/convex-client
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          pnpm publish --access=public --tag dev --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create snapshot release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Snapshot ${{ steps.version.outputs.SNAPSHOT_VERSION }}
+          tag_name: snapshot-${{ steps.version.outputs.SNAPSHOT_VERSION }}
+          body: |
+            ## 🚧 Development Snapshot
+
+            This is an automated snapshot release from the `develop` branch.
+
+            **Version:** `${{ steps.version.outputs.SNAPSHOT_VERSION }}`
+            **Commit:** ${{ github.sha }}
+            **Branch:** `develop`
+
+            ### Installation
+
+            ```bash
+            pnpm add @convex-world/convex-ts@dev
+            # or for specific version
+            pnpm add @convex-world/convex-ts@${{ steps.version.outputs.SNAPSHOT_VERSION }}
+            ```
+
+            ### ⚠️ Warning
+
+            This is a pre-release snapshot from active development. It may contain:
+            - Unstable APIs
+            - Breaking changes
+            - Incomplete features
+            - Bugs
+
+            **Not recommended for production use.**
+
+            ---
+
+            ### Changes in this snapshot
+
+            See commit: ${{ github.sha }}
+          draft: false
+          prerelease: true
+
+      - name: Comment on related PRs
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.version.outputs.SNAPSHOT_VERSION }}';
+            const sha = context.sha;
+
+            // Find PRs that include this commit
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha
+            });
+
+            for (const pr of prs) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `📦 Snapshot release published: \`${version}\`\n\nInstall with:\n\`\`\`bash\npnpm add @convex-world/convex-ts@dev\n\`\`\``
+              });
+            }

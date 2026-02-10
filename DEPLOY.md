@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide explains how to deploy the `convex-ts` package to npm.
+This guide explains how to deploy the `@convex-world/convex-ts` package to npm.
 
 ## Prerequisites
 
@@ -42,11 +42,11 @@ pnpm build
 pnpm pack
 ```
 
-2. This will create a file like `convex-ts-x.y.z.tgz`
+2. This will create a file like `convex-world-convex-ts-x.y.z.tgz`
 
 3. In another project, you can test it:
 ```bash
-pnpm add ../path/to/convex-ts-x.y.z.tgz
+pnpm add ../path/to/convex-world-convex-ts-x.y.z.tgz
 ```
 
 ## Publishing
@@ -85,7 +85,7 @@ git push origin vx.y.z
 
 If the package name is taken, you can:
 1. Choose a different name in `package.json`
-2. Publish under a scope (e.g., `@convex/ts`)
+2. Use a different scope (e.g., `@convex/convex-ts`)
 
 ### Authentication Issues
 
@@ -108,7 +108,7 @@ git branch
 
 3. Verify the version hasn't been published:
 ```bash
-npm view convex-ts versions
+npm view @convex-world/convex-ts versions
 ```
 
 ## Maintenance
@@ -117,14 +117,14 @@ npm view convex-ts versions
 
 If you need to deprecate a version:
 ```bash
-npm deprecate convex-ts@"<version>" "deprecation message"
+npm deprecate @convex-world/convex-ts@"<version>" "deprecation message"
 ```
 
 ### Removing a Published Version
 
 Note: This is only possible within 72 hours of publishing:
 ```bash
-npm unpublish convex-ts@x.y.z
+npm unpublish @convex-world/convex-ts@x.y.z
 ```
 
 ### Security Updates

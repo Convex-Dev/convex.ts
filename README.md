@@ -1,71 +1,134 @@
-# [Convex TypeScript Client](https://github.com/Convex-Dev/convex.ts)
+# convex.ts
 
-A TypeScript/JavaScript client library for interacting with the Convex DLT network.
+[![npm version](https://badge.fury.io/js/@convex-world%2Fconvex-ts.svg)](https://www.npmjs.com/package/@convex-world/convex-ts)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-See: [Convex Docs](https://docs.convex.world)
+Official TypeScript/JavaScript client library for the [Convex](https://convex.world) decentralized lattice network.
+
+**Convex** is building fair, inclusive, efficient, and sustainable economic systems based on decentralized technology. This library provides idiomatic TypeScript/JavaScript APIs for interacting with the Convex network.
+
+📚 [Convex Documentation](https://docs.convex.world) | 💬 [Discord](https://discord.com/invite/xfYGq4CT7v) | 🐙 [GitHub](https://github.com/Convex-Dev/convex.ts)
 
 ## Installation
 
 ```bash
-pnpm add convex-ts
-```
+# Using pnpm
+pnpm add @convex-world/convex-ts
 
-## Usage
+# Using npm
+npm install @convex-world/convex-ts
 
-### TypeScript
-
-```typescript
-import { Convex } from 'convex-ts';
-
-// Connect to a Convex peer
-const convex = new Convex('https://convex.world');
-
-// Create a new account with initial balance (on test network)
-await convex.createAccount(10000000);
-
-// Get account information
-const accountInfo = await convex.getAccountInfo();
-
-// Submit a transaction
-const result = await convex.submitTransaction({
-  // transaction details
-});
-```
-
-### JavaScript (ESM)
-
-```javascript
-import { Convex } from 'convex-ts';
-
-// Connect to a Convex peer
-const convex = new Convex('https://convex.world');
-
-// Create a new account with initial balance (on test network)
-await convex.createAccount(10000000);
-```
-
-### JavaScript (CommonJS)
-
-```javascript
-const { Convex } = require('convex-ts');
-
-// Connect to a Convex peer
-const convex = new Convex('https://convex.world');
-
-// Create a new account with initial balance (on test network)
-convex.createAccount(10000000)
-  .then(account => console.log(account));
+# Using yarn
+yarn add @convex-world/convex-ts
 ```
 
 ## Features
 
-- Connect to Convex network peers
-- Account management
-- Transaction submission and tracking
-- Cryptographic key pair generation and management
-- Query state and history
-- Full TypeScript type definitions
-- Supports both ESM and CommonJS
+- 🔐 **Account Management** - Create and manage Convex accounts
+- 🔑 **Cryptography** - Ed25519 key pair generation and signing
+- 💸 **Transactions** - Submit and track transactions on the network
+- 🔍 **Queries** - Query network state and account information
+- 🎨 **Identicons** - Generate visual identicons for addresses
+- 💾 **Key Storage** - Secure keystore functionality
+- 📘 **TypeScript** - Full type definitions included
+- 🌐 **ESM** - Modern ES module support
+- 🧪 **Tested** - Comprehensive test coverage
+
+## Quick Start
+
+### Basic Usage
+
+```typescript
+import { Convex } from '@convex-world/convex-ts';
+
+// Connect to a Convex peer
+const convex = new Convex('https://convex.world', {
+  timeout: 30000  // Optional: request timeout in ms
+});
+
+// Create a new account (generates key pair automatically)
+const account = await convex.createAccount(10000000);
+console.log('Account created:', account.address);
+
+// Get account information
+const accountInfo = await convex.getAccountInfo();
+console.log('Balance:', accountInfo.balance);
+
+// Submit a transaction
+const result = await convex.submitTransaction({
+  to: '#123',        // Destination address
+  amount: 1000000,   // Amount in copper coins
+  data: { memo: 'Hello Convex!' }
+});
+console.log('Transaction hash:', result.hash);
+
+// Query network state
+const queryResult = await convex.query({
+  source: '(balance *address*)'  // Convex Lisp query
+});
+console.log('Query result:', queryResult.value);
+```
+
+### Key Management
+
+```typescript
+import { generateKeyPair, sign, verify } from '@convex-world/convex-ts';
+
+// Generate a new key pair
+const keyPair = await generateKeyPair();
+console.log('Public key:', Buffer.from(keyPair.publicKey).toString('hex'));
+
+// Sign data
+const message = 'Hello Convex!';
+const signature = await sign(message, keyPair.privateKey);
+
+// Verify signature
+const isValid = await verify(signature, message, keyPair.publicKey);
+console.log('Signature valid:', isValid);
+```
+
+### Keystore Usage
+
+```typescript
+import { Keystore } from '@convex-world/convex-ts';
+
+// Create a keystore
+const keystore = await Keystore.create('mypassword123');
+
+// Save to encrypted file
+await keystore.save('./my-keystore.json');
+
+// Load from file
+const loaded = await Keystore.load('./my-keystore.json', 'mypassword123');
+
+// Export/import keys
+const exported = await keystore.export('mypassword123');
+const imported = await Keystore.import(exported, 'mypassword123');
+```
+
+### CommonJS Usage
+
+While this package is ESM-first, you can use it in CommonJS projects:
+
+```javascript
+const { Convex } = require('@convex-world/convex-ts');
+
+const convex = new Convex('https://convex.world');
+
+convex.createAccount(10000000)
+  .then(account => console.log('Account:', account))
+  .catch(error => console.error('Error:', error));
+```
+
+## Packages
+
+This is a monorepo containing multiple packages:
+
+| Package | npm | Description | Status |
+|---------|-----|-------------|--------|
+| **convex-client** | [@convex-world/convex-ts](https://www.npmjs.com/package/@convex-world/convex-ts) | Core TypeScript client | ✅ Published |
+| **convex-react** | `@convex-world/convex-react` | React hooks & components | 🚧 In development |
+| **demo-site** | - | Next.js demo application | 🚧 In development |
 
 ## Development
 
@@ -89,7 +152,7 @@ pnpm run build
 
 ```bash
 # Build the convex-client package
-pnpm --filter @convex-world/convex-client build
+pnpm --filter @convex-world/convex-ts build
 
 # Build the convex-react package
 pnpm --filter @convex-world/convex-react build
@@ -160,7 +223,7 @@ pnpm test
 CONVEX_PEER_URL=http://localhost:8080 pnpm test
 
 # Run tests for specific package
-pnpm --filter @convex-world/convex-client test
+pnpm --filter @convex-world/convex-ts test
 ```
 
 ### Project Structure
@@ -214,7 +277,7 @@ pnpm install
 
 2. Build the client library first:
 ```bash
-pnpm --filter @convex-world/convex-client build
+pnpm --filter @convex-world/convex-ts build
 ```
 
 3. Check for port conflicts:
@@ -230,11 +293,11 @@ rm -rf .next
 pnpm dev
 ```
 
-## API Documentation
+## API Reference
 
-### Convex
+### `Convex` Class
 
-The main class for interacting with the Convex network.
+Main client for interacting with the Convex network.
 
 #### Constructor
 
@@ -242,14 +305,150 @@ The main class for interacting with the Convex network.
 new Convex(peerUrl: string, options?: ClientOptions)
 ```
 
+**Parameters:**
+- `peerUrl`: URL of the Convex peer (e.g., `'https://convex.world'`)
+- `options`: Optional configuration
+  - `timeout?: number` - Request timeout in milliseconds (default: 30000)
+  - `headers?: Record<string, string>` - Custom HTTP headers
+
 #### Methods
 
-- `createAccount(initialBalance?: number): Promise<Account>`
-- `getAccountInfo(): Promise<AccountInfo>`
-- `submitTransaction(tx: Transaction): Promise<TransactionResult>`
-- `getKeyPair(): KeyPair`
-- `query(query: Query): Promise<QueryResult>`
+##### `createAccount(initialBalance?: number): Promise<AccountInfo>`
+
+Creates a new account with an auto-generated key pair.
+
+**Parameters:**
+- `initialBalance`: Optional initial balance in copper coins (1 Convex Coin = 1,000,000 copper)
+
+**Returns:** Account information including address, balance, and public key
+
+##### `getAccountInfo(): Promise<AccountInfo>`
+
+Retrieves current account information.
+
+**Returns:** Updated account information
+
+##### `submitTransaction(tx: Transaction): Promise<TransactionResult>`
+
+Submits a signed transaction to the network.
+
+**Parameters:**
+- `tx`: Transaction object
+  - `to?: string` - Destination address
+  - `amount?: number` - Amount to transfer
+  - `sequence?: number` - Transaction sequence number
+  - `data?: any` - Additional transaction data
+
+**Returns:** Transaction result with hash and status
+
+##### `query(query: Query): Promise<Result>`
+
+Executes a query on the network.
+
+**Parameters:**
+- `query`: Query object
+  - `address?: string` - Address context for query
+  - `source?: any` - Convex Lisp query source
+
+**Returns:** Query result value
+
+##### `getKeyPair(): KeyPair`
+
+Returns the current key pair.
+
+**Returns:** Key pair object with `privateKey` and `publicKey`
+
+### Cryptography Functions
+
+```typescript
+// Generate a new Ed25519 key pair
+generateKeyPair(): Promise<KeyPair>
+
+// Sign a message
+sign(message: string, privateKey: Uint8Array): Promise<Uint8Array>
+
+// Verify a signature
+verify(signature: Uint8Array, message: string, publicKey: Uint8Array): Promise<boolean>
+```
+
+### `Keystore` Class
+
+Secure encrypted key storage.
+
+```typescript
+// Create a new keystore
+static create(password: string): Promise<Keystore>
+
+// Load from file
+static load(filePath: string, password: string): Promise<Keystore>
+
+// Import from JSON
+static import(json: string, password: string): Promise<Keystore>
+
+// Save to file
+save(filePath: string): Promise<void>
+
+// Export to JSON
+export(password: string): Promise<string>
+```
+
+### TypeScript Types
+
+All TypeScript interfaces are exported for your convenience:
+
+```typescript
+import type {
+  ClientOptions,
+  KeyPair,
+  AccountInfo,
+  Transaction,
+  TransactionResult,
+  Query,
+  Result
+} from '@convex-world/convex-ts';
+```
+
+## Contributing
+
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/Convex-Dev/convex.ts.git
+cd convex.ts
+
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Run tests (requires Docker for local peer)
+docker-compose up -d
+pnpm test
+```
+
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines.
+
+## Support
+
+- 📚 [Documentation](https://docs.convex.world)
+- 💬 [Discord Community](https://discord.com/invite/xfYGq4CT7v)
+- 🐛 [Issue Tracker](https://github.com/Convex-Dev/convex.ts/issues)
+- 🌐 [Convex Website](https://convex.world)
+
+## Related Projects
+
+- [convex](https://github.com/Convex-Dev/convex) - Core Convex network implementation (Java)
+- [convex.world](https://github.com/Convex-Dev/convex.world) - Main website
+- [design](https://github.com/Convex-Dev/design) - Architecture documentation
 
 ## License
 
-Apache License 2.0 
+Apache License 2.0 - see [LICENSE](LICENSE) file for details.
+
+---
+
+Built with ❤️ by the [Convex Foundation](https://convex.world) 

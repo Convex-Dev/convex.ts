@@ -1,5 +1,5 @@
 import React from 'react';
-import { generateIdenticonGrid, hexToBytes } from '@convex-world/convex-client';
+import { generateIdenticonGrid, hexToBytes } from '@convex-world/convex-ts';
 
 interface IdenticonProps {
   data: Uint8Array | string;

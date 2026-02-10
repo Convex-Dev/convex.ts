@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
-import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-client";
+import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-ts";
 import Button from "../components/Button";
 
 export default function KeyPairGeneratorPage() {

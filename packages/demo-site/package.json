@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@convex-world/convex-client": "workspace:*",
+    "@convex-world/convex-ts": "workspace:*",
     "@convex-world/convex-react": "workspace:*",
     "next": "15.3.4",
     "react": "^18.3.1",
