@@ -53,7 +53,7 @@ export class Convex {
       const keyPair = KeyPair.generate();
       this.setSigner(keyPair);
 
-      const publicKey = await this.signer!.getPublicKey();
+      const publicKey = this.signer!.getPublicKey();
       const response = await this.http.post('/api/v1/account/create', {
         address: this.address,
         publicKey,
@@ -118,7 +118,7 @@ export class Convex {
       };
 
       // Get public key from signer
-      const publicKey = await this.signer.getPublicKey();
+      const publicKey = this.signer.getPublicKey();
       const publicKeyHex = Buffer.from(publicKey).toString('hex');
 
       // Sign the transaction with the specific public key for this account

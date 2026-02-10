@@ -19,19 +19,21 @@ export interface Signer {
    * Get the default public key for this signer
    * For single-key signers, this is the only key.
    * For multi-key signers, this is the primary/default key.
+   *
+   * Public keys should be cached/precomputed, so this is synchronous.
    * @returns Public key as Uint8Array (32 bytes for Ed25519)
    */
-  getPublicKey(): Promise<Uint8Array>;
+  getPublicKey(): Uint8Array;
 
   /**
-   * Sign a message with the default key
+   * Sign a message with the default key (async - may require user interaction)
    * @param message Message to sign as Uint8Array
    * @returns Signature as Uint8Array (64 bytes for Ed25519)
    */
   sign(message: Uint8Array): Promise<Uint8Array>;
 
   /**
-   * Sign a message with a specific public key
+   * Sign a message with a specific public key (async - may require user interaction)
    * For single-key signers, publicKey should match getPublicKey().
    * For multi-key signers, this allows signing with any managed key.
    *
@@ -45,5 +47,5 @@ export interface Signer {
    * Optional: Get the display address for this signer
    * @returns Address string (e.g., "#1678")
    */
-  getAddress?(): Promise<string>;
+  getAddress?(): string;
 }

@@ -164,7 +164,7 @@ export class LocalStorageKeyStore extends KeyStore {
    * @param alias The alias to look up
    * @returns The public key as Uint8Array, or null if not found
    */
-  async getPublicKey(alias: string): Promise<Uint8Array | null> {
+  getPublicKey(alias: string): Uint8Array | null {
     const parsed = this.readStoredRecord(alias);
     if (!parsed) return null;
     return jsonArrayToBytes(parsed.publicKey);

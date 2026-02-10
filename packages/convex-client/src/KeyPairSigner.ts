@@ -23,7 +23,7 @@ export class KeyPairSigner implements Signer {
   /**
    * Get the public key
    */
-  async getPublicKey(): Promise<Uint8Array> {
+  getPublicKey(): Uint8Array {
     return this.keyPair.publicKey;
   }
 

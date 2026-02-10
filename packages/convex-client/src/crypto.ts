@@ -42,12 +42,12 @@ export function hexToBytes(input: Hex): Uint8Array {
  * Generate a new Ed25519 key pair
  * @deprecated Use KeyPair.generate() instead
  */
-export async function generateKeyPair(): Promise<IKeyPair> {
-  const privateKey = ed.utils.randomPrivateKey();
-  const publicKey = await ed.getPublicKey(privateKey);
+export function generateKeyPair(): IKeyPair {
+  const seed = ed.utils.randomPrivateKey();
+  const publicKey = ed.getPublicKey(seed);
 
   return {
-    privateKey,
+    privateKey: seed,
     publicKey
   };
 }
@@ -56,16 +56,15 @@ export async function generateKeyPair(): Promise<IKeyPair> {
  * Generate an Ed25519 key pair from a seed
  * @deprecated Use KeyPair.fromSeed() instead
  */
-export async function generateKeyPairFromSeed(seed: Uint8Array): Promise<IKeyPair> {
+export function generateKeyPairFromSeed(seed: Uint8Array): IKeyPair {
   if (seed.length !== 32) {
     throw new Error('Seed must be exactly 32 bytes');
   }
 
-  const privateKey = seed;
-  const publicKey = await ed.getPublicKey(privateKey);
+  const publicKey = ed.getPublicKey(seed);
 
   return {
-    privateKey,
+    privateKey: seed,
     publicKey
   };
 }
