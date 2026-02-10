@@ -37,15 +37,9 @@ export interface Signer {
    * For single-key signers, publicKey should match getPublicKey().
    * For multi-key signers, this allows signing with any managed key.
    *
-   * @param message Message to sign as Uint8Array
    * @param publicKey Public key to sign with (as Uint8Array or hex string)
+   * @param message Message to sign as Uint8Array
    * @returns Signature as Uint8Array (64 bytes for Ed25519)
    */
-  signFor(message: Uint8Array, publicKey: Hex): Promise<Uint8Array>;
-
-  /**
-   * Optional: Get the display address for this signer
-   * @returns Address string (e.g., "#1678")
-   */
-  getAddress?(): string;
+  signFor(publicKey: Hex, message: Uint8Array): Promise<Uint8Array>;
 }

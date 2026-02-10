@@ -124,7 +124,7 @@ export class Convex {
       // Sign the transaction with the specific public key for this account
       const message = JSON.stringify(txData);
       const messageBytes = hexToBytes(message);
-      const signature = await this.signer.signFor(messageBytes, publicKeyHex);
+      const signature = await this.signer.signFor(publicKeyHex, messageBytes);
 
       // Submit signed transaction
       const response = await this.http.post('/api/v1/transaction', {

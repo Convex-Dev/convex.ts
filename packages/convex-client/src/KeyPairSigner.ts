@@ -39,11 +39,11 @@ export class KeyPairSigner implements Signer {
   /**
    * Sign a message for a specific public key
    * For KeyPairSigner, this verifies the public key matches and signs.
-   * @param message Message to sign
    * @param publicKey Public key (must match this signer's public key)
+   * @param message Message to sign
    * @returns Signature
    */
-  async signFor(message: Uint8Array, publicKey: Hex): Promise<Uint8Array> {
+  async signFor(publicKey: Hex, message: Uint8Array): Promise<Uint8Array> {
     const pubBytes = hexToBytes(publicKey);
     const ourPubHex = bytesToHex(this.keyPair.publicKey);
     const theirPubHex = bytesToHex(pubBytes);
