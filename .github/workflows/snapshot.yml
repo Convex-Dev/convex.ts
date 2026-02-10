@@ -43,7 +43,7 @@ jobs:
       - name: Update package version
         run: |
           cd packages/convex-client
-          npm version ${{ steps.version.outputs.SNAPSHOT_VERSION }} --no-git-tag-version
+          node -e "const pkg = require('./package.json'); pkg.version = '${{ steps.version.outputs.SNAPSHOT_VERSION }}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
 
       - name: Publish snapshot to npm
         run: |
