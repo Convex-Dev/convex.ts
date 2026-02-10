@@ -135,11 +135,43 @@ export class Convex {
   }
 
   /**
-   * Submit a transaction to the network (alias for submitTransaction)
-   * @param tx Transaction details
+   * Submit a transaction to the network
+   * @param tx Transaction details or Convex Lisp code string
    */
-  async transact(tx: Transaction): Promise<TransactionResult> {
+  async transact(tx: Transaction | string): Promise<TransactionResult> {
+    if (typeof tx === 'string') {
+      // Execute code string as transaction
+      return this.submitTransaction({
+        data: { code: tx }
+      });
+    }
     return this.submitTransaction(tx);
+  }
+
+  /**
+   * Transfer coins to another address (convenience method)
+   * @param to Destination address
+   * @param amount Amount in copper coins
+   */
+  async transfer(to: string, amount: number): Promise<TransactionResult> {
+    return this.transact({ to, amount });
+  }
+
+  /**
+   * Get the current transaction sequence number
+   * @returns Current sequence number
+   */
+  async getSequence(): Promise<number> {
+    const info = await this.getAccountInfo();
+    return info.sequence;
+  }
+
+  /**
+   * Set the request timeout
+   * @param timeout Timeout in milliseconds
+   */
+  setTimeout(timeout: number): void {
+    this.http.defaults.timeout = timeout;
   }
 
   /**

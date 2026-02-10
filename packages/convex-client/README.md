@@ -131,6 +131,9 @@ const convex = new Convex('https://peer.convex.live', {
     'X-Custom-Header': 'value'
   }
 });
+
+// Change timeout after creation
+convex.setTimeout(60000);  // 60 seconds
 ```
 
 **Network URLs:**
@@ -241,22 +244,38 @@ if (result.status === 'success') {
 **Common Transaction Patterns:**
 
 ```typescript
-// Simple transfer
-await convex.transact({ to: '#456', amount: 1_000_000 });
+// Simple transfer (convenience method)
+await convex.transfer('#456', 1_000_000);
 
-// Call a smart contract
-await convex.transact({
-  to: '#789',  // Contract address
-  data: {
-    call: '(my-function arg1 arg2)'
-  }
-});
+// Execute Convex Lisp code
+await convex.transact('(transfer #456 1000000)');
 
 // Deploy code
+await convex.transact('(def my-function (fn [x] (* x 2)))');
+
+// Call a smart contract
+await convex.transact('(call #789 (my-function arg1 arg2))');
+
+// Complex transaction with data
 await convex.transact({
-  data: {
-    code: '(def my-function (fn [x] (* x 2)))'
-  }
+  to: '#789',
+  amount: 1_000_000,
+  data: { memo: 'Payment' }
+});
+```
+
+#### Transaction Sequence Numbers
+
+```typescript
+// Get current sequence number
+const seq = await convex.getSequence();
+console.log('Next transaction sequence:', seq);
+
+// Explicitly set sequence (rarely needed, auto-managed)
+await convex.transact({
+  to: '#456',
+  amount: 1_000_000,
+  sequence: seq
 });
 ```
 
@@ -409,11 +428,7 @@ async function main() {
     console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
 
     // Transfer funds
-    const result = await convex.transact({
-      to: '#456',
-      amount: 1_000_000,
-      data: { memo: 'Payment' }
-    });
+    const result = await convex.transfer('#456', 1_000_000);
 
     if (result.status === 'success') {
       console.log('✅ Transaction successful!');
