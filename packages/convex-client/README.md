@@ -60,13 +60,7 @@ const myKeyPair = await KeyPair.fromHex({
   privateKey: 'your-private-key-hex'
 });
 
-// Or from bytes
-const myKeyPair = new KeyPair(
-  new Uint8Array([/* your private key bytes */]),
-  new Uint8Array([/* your public key bytes */])
-);
-
-convex.useAccount('#1678', myKeyPair);
+convex.setAccount('#1678', myKeyPair);
 
 // Now you can transact
 const result = await convex.transact({
@@ -92,7 +86,7 @@ const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
 
 // Connect and use your account
 const convex = new Convex('https://peer.convex.live');
-convex.useAccount('#1678', keyPair);
+convex.setAccount('#1678', keyPair);
 
 // Query your balance
 const info = await convex.getAccountInfo();
@@ -172,7 +166,7 @@ const keyPair = await KeyPair.fromPrivateKey(
 );
 
 // Note: Public key is automatically derived from private key
-await convex.useAccount('#1678', keyPair);
+convex.setAccount('#1678', keyPair);
 ```
 
 #### Using Custom Signers
@@ -202,8 +196,8 @@ class HardwareWalletSigner implements Signer {
 
 // Use custom signer
 const signer = new HardwareWalletSigner();
-await convex.setSigner(signer);
-await convex.useAddress('#1678');
+convex.setSigner(signer);
+convex.setAddress('#1678');
 ```
 
 #### Reusing Signer for Multiple Addresses
@@ -212,13 +206,13 @@ Same signer can sign for multiple accounts:
 
 ```typescript
 const keyPair = await KeyPair.fromSeed(mySeed);
-await convex.setSigner(keyPair);  // Set signer once
+convex.setSigner(keyPair);  // Set signer once
 
 // Use different addresses with same signer
-await convex.useAddress('#1678');
+convex.setAddress('#1678');
 await convex.transfer('#456', 1_000_000);
 
-await convex.useAddress('#9999');  // Switch to different address
+convex.setAddress('#9999');  // Switch to different address
 await convex.transfer('#456', 500_000);
 ```
 
@@ -236,7 +230,7 @@ const keyPair = await KeyPair.fromSeed(seed);
 // Or from hex string
 const keyPair = await KeyPair.fromSeed('0123456789abcdef...');
 
-convex.useAccount('#1678', keyPair);
+convex.setAccount('#1678', keyPair);
 ```
 
 #### Getting Account Information
@@ -505,7 +499,7 @@ async function main() {
     // Set up with your account using seed from environment
     const seedHex = process.env.CONVEX_SEED!;
     const keyPair = await KeyPair.fromSeed(seedHex);
-    convex.useAccount('#1678', keyPair);
+    convex.setAccount('#1678', keyPair);
 
     // Check balance
     const info = await convex.getAccountInfo();
@@ -541,7 +535,7 @@ function ConvexWallet({ accountAddress, keyPair }) {
   useEffect(() => {
     async function loadAccount() {
       try {
-        convex.useAccount(accountAddress, keyPair);
+        convex.setAccount(accountAddress, keyPair);
         const info = await convex.getAccountInfo();
         setBalance(info.balance);
       } catch (error) {
