@@ -16,11 +16,8 @@ import type { Hex } from './types.js';
  * const seed = new Uint8Array(32);
  * const keyPair = await KeyPair.fromSeed(seed);
  *
- * // From hex strings
- * const keyPair = await KeyPair.fromHex({
- *   publicKey: 'abcd...',
- *   privateKey: '1234...'
- * });
+ * // From private key (public key is derived)
+ * const keyPair = await KeyPair.fromPrivateKey('abcd1234...');
  * ```
  */
 export class KeyPair {
@@ -35,14 +32,15 @@ export class KeyPair {
   readonly publicKey: Uint8Array;
 
   /**
-   * Create a KeyPair from raw bytes
+   * Private constructor - use static factory methods instead
+   * This ensures the public key always matches the private key
    *
-   * @param privateKey Private key as Uint8Array or hex string
-   * @param publicKey Public key as Uint8Array or hex string
+   * @param privateKey Private key as Uint8Array (32 bytes)
+   * @param publicKey Public key as Uint8Array (32 bytes)
    */
-  constructor(privateKey: Hex, publicKey: Hex) {
-    this.privateKey = hexToBytes(privateKey);
-    this.publicKey = hexToBytes(publicKey);
+  private constructor(privateKey: Uint8Array, publicKey: Uint8Array) {
+    this.privateKey = privateKey;
+    this.publicKey = publicKey;
 
     // Validate sizes
     if (this.privateKey.length !== 32) {
@@ -70,7 +68,29 @@ export class KeyPair {
   }
 
   /**
+   * Create a KeyPair from a private key (public key is derived)
+   *
+   * @param privateKey Private key as Uint8Array or hex string (32 bytes)
+   * @returns KeyPair with derived public key
+   * @example
+   * ```typescript
+   * const keyPair = await KeyPair.fromPrivateKey('abcd1234...');
+   * ```
+   */
+  static async fromPrivateKey(privateKey: Hex): Promise<KeyPair> {
+    const privBytes = hexToBytes(privateKey);
+    if (privBytes.length !== 32) {
+      throw new Error('Private key must be exactly 32 bytes');
+    }
+
+    const publicKey = await ed.getPublicKey(privBytes);
+    return new KeyPair(privBytes, publicKey);
+  }
+
+  /**
    * Generate a key pair from a 32-byte seed (deterministic)
+   *
+   * In Ed25519, the seed IS the private key, so this is an alias for fromPrivateKey.
    *
    * @param seed 32-byte seed as Uint8Array or hex string
    * @returns KeyPair derived from seed
@@ -84,34 +104,7 @@ export class KeyPair {
    * ```
    */
   static async fromSeed(seed: Hex): Promise<KeyPair> {
-    const seedBytes = hexToBytes(seed);
-    if (seedBytes.length !== 32) {
-      throw new Error('Seed must be exactly 32 bytes');
-    }
-
-    const privateKey = seedBytes;
-    const publicKey = await ed.getPublicKey(privateKey);
-    return new KeyPair(privateKey, publicKey);
-  }
-
-  /**
-   * Create a KeyPair from hex strings
-   *
-   * @param keys Object with publicKey and privateKey as hex strings
-   * @returns KeyPair instance
-   * @example
-   * ```typescript
-   * const keyPair = await KeyPair.fromHex({
-   *   publicKey: 'abcd1234...',
-   *   privateKey: '5678ef90...'
-   * });
-   * ```
-   */
-  static async fromHex(keys: {
-    publicKey: string;
-    privateKey: string;
-  }): Promise<KeyPair> {
-    return new KeyPair(keys.privateKey, keys.publicKey);
+    return KeyPair.fromPrivateKey(seed);
   }
 
   /**

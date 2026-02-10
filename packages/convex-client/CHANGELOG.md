@@ -8,7 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `KeyPair` class with static factory methods (`KeyPair.generate()`, `KeyPair.fromSeed()`, `KeyPair.fromHex()`)
+- `Signer` interface for pluggable signing mechanisms (hardware wallets, extensions, HSM, etc.)
+- `KeyPairSigner` class implementing Signer for local key pairs
+- `signFor(message, publicKey)` method on Signer to support multi-key signers
+- `KeyPair.fromPrivateKey()` factory method (public key is derived)
+- `setSigner()` method on Convex class to set signer independently
+- `useAddress()` method on Convex class to change address without changing signer
+- `getSigner()` method on Convex class to get current signer
 - `Hex` type for flexible input (accepts both `Uint8Array` and hex strings)
 - Convenience properties `publicKeyHex` and `privateKeyHex` for KeyPair
 - Export methods `toHex()` and `toObject()` for KeyPair serialization
@@ -18,12 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setTimeout()` method to adjust request timeout
 
 ### Changed
-- Updated README with modern KeyPair class examples
-- Deprecated legacy `generateKeyPair()` and `generateKeyPairFromSeed()` functions (use `KeyPair` class instead)
-- Keystore now returns `KeyPair` class instances instead of plain objects
+- **BREAKING**: `KeyPair` constructor is now private - use factory methods instead
+  - Use `KeyPair.generate()` for random keys
+  - Use `KeyPair.fromSeed()` or `KeyPair.fromPrivateKey()` for deterministic keys
+- **BREAKING**: `useAccount()` is now async and accepts Signer, KeyPair, or plain object
+- **BREAKING**: Keystore methods `getUnlockedKeyPair()` and `isUnlocked()` are now async
+- Convex class now uses Signer abstraction internally instead of raw key pairs
+- Signer can manage multiple keys (use `signFor` to specify which key)
+- Public key is always derived from private key (prevents invalid state)
+- Updated README with modern KeyPair class examples and Signer usage
+- Deprecated legacy `generateKeyPair()` and `generateKeyPairFromSeed()` functions
+- Deprecated `getKeyPair()` method (use `getSigner()` instead)
 
 ### Fixed
-- Keystore methods now properly construct `KeyPair` class instances
+- Keystore methods now properly construct `KeyPair` instances using factory methods
+- Demo site updated to use new KeyPair API
 
 ## [0.1.0] - 2026-02-10
 

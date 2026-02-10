@@ -9,19 +9,21 @@ import {
   Result
 } from './types.js';
 import { KeyPair } from './KeyPair.js';
-import { generateKeyPair, sign } from './crypto.js';
+import { Signer } from './Signer.js';
+import { KeyPairSigner } from './KeyPairSigner.js';
+import { generateKeyPair, sign, hexToBytes } from './crypto.js';
 
 /**
- * Type that accepts either KeyPair class or plain object
+ * Type that accepts Signer, KeyPair class, or plain object
  */
-type KeyPairLike = KeyPair | IKeyPair;
+type SignerLike = Signer | KeyPair | IKeyPair;
 
 /**
  * Main class for interacting with the Convex network
  */
 export class Convex {
   private readonly http: AxiosInstance;
-  private keyPair?: IKeyPair;
+  private signer?: Signer;
   private accountInfo?: AccountInfo;
   private address?: string
 
@@ -47,12 +49,14 @@ export class Convex {
    */
   async createAccount(initialBalance?: number): Promise<AccountInfo> {
     try {
-      // Generate new key pair
-      this.keyPair = await generateKeyPair();
+      // Generate new key pair and set as signer
+      const keyPair = await KeyPair.generate();
+      this.signer = new KeyPairSigner(keyPair);
 
+      const publicKey = await this.signer.getPublicKey();
       const response = await this.http.post('/api/v1/account/create', {
         address: this.address,
-        publicKey: this.keyPair.publicKey,
+        publicKey,
         initialBalance
       });
 
@@ -96,8 +100,8 @@ export class Convex {
    * @param tx Transaction details
    */
   async submitTransaction(tx: Transaction): Promise<TransactionResult> {
-    if (!this.keyPair || !this.accountInfo) {
-      throw new Error('No account created');
+    if (!this.signer || !this.accountInfo) {
+      throw new Error('No account set. Call useAccount() or useAddress() first.');
     }
 
     try {
@@ -108,9 +112,10 @@ export class Convex {
         sequence: tx.sequence || this.accountInfo.sequence
       };
 
-      // Sign the transaction
+      // Sign the transaction with the specific public key for this account
       const message = JSON.stringify(txData);
-      const signature = await sign(message, this.keyPair.privateKey);
+      const messageBytes = hexToBytes(message);
+      const signature = await this.signer.signFor(messageBytes, this.accountInfo.publicKey);
 
       // Submit signed transaction
       const response = await this.http.post('/api/v1/transaction', {
@@ -125,20 +130,52 @@ export class Convex {
   }
 
   /**
-   * Use an existing account with a key pair
-   * @param address Account address (e.g., "#1678")
-   * @param keyPair Ed25519 key pair (KeyPair class or plain object)
+   * Set the signer for this client
+   * @param signer Signer, KeyPair, or plain key pair object
    */
-  useAccount(address: string, keyPair: KeyPairLike): void {
+  async setSigner(signer: SignerLike): Promise<void> {
+    // Convert to Signer if needed
+    if ('sign' in signer && 'getPublicKey' in signer) {
+      // Already a Signer
+      this.signer = signer;
+    } else if (signer instanceof KeyPair) {
+      // Convert KeyPair to KeyPairSigner
+      this.signer = new KeyPairSigner(signer);
+    } else {
+      // Plain object - convert to KeyPair then to Signer
+      const keyPair = await KeyPair.fromPrivateKey(signer.privateKey);
+      this.signer = new KeyPairSigner(keyPair);
+    }
+  }
+
+  /**
+   * Use a specific address (account) for transactions
+   * Requires a signer to be set first via setSigner()
+   * @param address Account address (e.g., "#1678")
+   */
+  async useAddress(address: string): Promise<void> {
+    if (!this.signer) {
+      throw new Error('No signer set. Call setSigner() first.');
+    }
+
     this.address = address;
-    // Convert KeyPair class to plain object if needed
-    this.keyPair = keyPair instanceof KeyPair ? keyPair.toObject() : keyPair;
+    const publicKey = await this.signer.getPublicKey();
     this.accountInfo = {
       address,
       balance: 0,
       sequence: 0,
-      publicKey: Buffer.from(this.keyPair.publicKey).toString('hex')
+      publicKey: Buffer.from(publicKey).toString('hex')
     };
+  }
+
+  /**
+   * Use an existing account with a signer (convenience method)
+   * @param address Account address (e.g., "#1678")
+   * @param signer Signer, KeyPair, or plain key pair object
+   */
+  async useAccount(address: string, signer: SignerLike): Promise<void> {
+    await this.setSigner(signer);
+    await this.useAddress(address);
   }
 
   /**
@@ -182,14 +219,29 @@ export class Convex {
   }
 
   /**
-   * Get the current key pair
-   * @returns KeyPair as plain object (for backward compatibility)
+   * Get the current signer
+   * @returns Signer instance
    */
-  getKeyPair(): IKeyPair {
-    if (!this.keyPair) {
-      throw new Error('No account created');
+  getSigner(): Signer {
+    if (!this.signer) {
+      throw new Error('No signer set');
     }
-    return this.keyPair;
+    return this.signer;
+  }
+
+  /**
+   * Get the current key pair (only works if using KeyPairSigner)
+   * @returns KeyPair instance
+   * @deprecated Use getSigner() instead for more flexibility
+   */
+  getKeyPair(): KeyPair {
+    if (!this.signer) {
+      throw new Error('No signer set');
+    }
+    if (!(this.signer instanceof KeyPairSigner)) {
+      throw new Error('Current signer is not a KeyPairSigner. Use getSigner() instead.');
+    }
+    return this.signer.getKeyPair();
   }
 
   /**

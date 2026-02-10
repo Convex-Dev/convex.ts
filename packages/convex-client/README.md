@@ -161,21 +161,65 @@ import { KeyPair } from '@convex-world/convex-ts';
 
 // You need:
 // 1. Your account address (e.g., "#1678")
-// 2. Your Ed25519 key pair
+// 2. Your Ed25519 private key (public key is derived)
 
-// From hex strings (recommended)
-const keyPair = await KeyPair.fromHex({
-  publicKey: 'your-public-key-hex',
-  privateKey: 'your-private-key-hex'
-});
+// From private key hex string (recommended)
+const keyPair = await KeyPair.fromPrivateKey('your-private-key-hex');
 
-// Or from bytes
-const keyPair = new KeyPair(
-  new Uint8Array([/* 32 private key bytes */]),
-  new Uint8Array([/* 32 public key bytes */])
+// Or from private key bytes
+const keyPair = await KeyPair.fromPrivateKey(
+  new Uint8Array([/* 32 private key bytes */])
 );
 
-convex.useAccount('#1678', keyPair);
+// Note: Public key is automatically derived from private key
+await convex.useAccount('#1678', keyPair);
+```
+
+#### Using Custom Signers
+
+For hardware wallets, browser extensions, or other signing mechanisms:
+
+```typescript
+import { type Signer } from '@convex-world/convex-ts';
+
+// Implement custom signer
+class HardwareWalletSigner implements Signer {
+  async getPublicKey(): Promise<Uint8Array> {
+    // Get public key from hardware wallet
+    return await this.wallet.getPublicKey();
+  }
+
+  async sign(message: Uint8Array): Promise<Uint8Array> {
+    // Sign with hardware wallet (may prompt user)
+    return await this.wallet.sign(message);
+  }
+
+  async signFor(message: Uint8Array, publicKey: Hex): Promise<Uint8Array> {
+    // Sign with specific key (for multi-key wallets)
+    return await this.wallet.signWithKey(message, publicKey);
+  }
+}
+
+// Use custom signer
+const signer = new HardwareWalletSigner();
+await convex.setSigner(signer);
+await convex.useAddress('#1678');
+```
+
+#### Reusing Signer for Multiple Addresses
+
+Same signer can sign for multiple accounts:
+
+```typescript
+const keyPair = await KeyPair.fromSeed(mySeed);
+await convex.setSigner(keyPair);  // Set signer once
+
+// Use different addresses with same signer
+await convex.useAddress('#1678');
+await convex.transfer('#456', 1_000_000);
+
+await convex.useAddress('#9999');  // Switch to different address
+await convex.transfer('#456', 500_000);
 ```
 
 #### Deriving from Seed

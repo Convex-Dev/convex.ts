@@ -138,7 +138,7 @@ export class LocalStorageKeyStore extends KeyStore {
     const { publicKey, iv, salt, encryptedPrivateKey, iterations } = parsed;
     try {
       const priv = await decryptData(jsonArrayToBytes(encryptedPrivateKey), jsonArrayToBytes(iv), password, jsonArrayToBytes(salt), iterations ?? 100_000);
-      return new KeyPair(priv, jsonArrayToBytes(publicKey));
+      return await KeyPair.fromPrivateKey(priv);
     } catch (e) {
       console.error('Decryption failed:', e);
       return null;
@@ -193,17 +193,14 @@ export class LocalStorageKeyStore extends KeyStore {
    * @param alias The alias to look up (when string overload is used)
    * @returns The unlocked key pair, or null if not found
    */
-  getUnlockedKeyPair(alias: string): KeyPair | null;
-  getUnlockedKeyPair(publicKey: Uint8Array): KeyPair | null;
-  getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): KeyPair | null {
+  getUnlockedKeyPair(alias: string): Promise<KeyPair | null>;
+  getUnlockedKeyPair(publicKey: Uint8Array): Promise<KeyPair | null>;
+  async getUnlockedKeyPair(aliasOrPublicKey: string | Uint8Array): Promise<KeyPair | null> {
     // Lookup by alias
     if (typeof aliasOrPublicKey === 'string') {
       const parsed = this.readSession(aliasOrPublicKey);
       if (!parsed) return null;
-      return new KeyPair(
-        jsonArrayToBytes(parsed.privateKey),
-        jsonArrayToBytes(parsed.publicKey)
-      );
+      return await KeyPair.fromPrivateKey(jsonArrayToBytes(parsed.privateKey));
     }
 
     // Lookup by public key value
@@ -215,10 +212,7 @@ export class LocalStorageKeyStore extends KeyStore {
       if (!parsed) continue;
       const storedPub = jsonArrayToBytes(parsed.publicKey);
       if (bytesEqual(storedPub, target)) {
-        return new KeyPair(
-          jsonArrayToBytes(parsed.privateKey),
-          storedPub
-        );
+        return await KeyPair.fromPrivateKey(jsonArrayToBytes(parsed.privateKey));
       }
     }
     return null;
@@ -237,10 +231,11 @@ export class LocalStorageKeyStore extends KeyStore {
   }
 
   /** Check if a key is currently unlocked (by alias or public key). */
-  isUnlocked(alias: string): boolean;
-  isUnlocked(publicKey: Uint8Array): boolean;
-  isUnlocked(aliasOrPublicKey: string | Uint8Array): boolean {
-    return this.getUnlockedKeyPair(aliasOrPublicKey as any) !== null;
+  isUnlocked(alias: string): Promise<boolean>;
+  isUnlocked(publicKey: Uint8Array): Promise<boolean>;
+  async isUnlocked(aliasOrPublicKey: string | Uint8Array): Promise<boolean> {
+    const kp = await this.getUnlockedKeyPair(aliasOrPublicKey as any);
+    return kp !== null;
   }
 
   /**

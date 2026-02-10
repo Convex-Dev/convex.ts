@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
-import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, type KeyPair } from "@convex-world/convex-ts";
+import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, KeyPair } from "@convex-world/convex-ts";
 import Button from "../components/Button";
 
 export default function KeyPairGeneratorPage() {
@@ -88,10 +88,7 @@ export default function KeyPairGeneratorPage() {
     if (!publicKey || !privateKey) return;
     if (!newAlias) return;
     try {
-      const kp: KeyPair = {
-        publicKey: hexToUint8(publicKey),
-        privateKey: hexToUint8(privateKey)
-      };
+      const kp = await KeyPair.fromPrivateKey(hexToUint8(privateKey));
       await ks.storeKeyPair(newAlias, kp, newPassword);
       await refreshAliases();
       setUnlocked((m) => ({ ...m, [newAlias]: null }));
