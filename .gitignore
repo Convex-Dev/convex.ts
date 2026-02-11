@@ -46,4 +46,3 @@ packages/demo-site/out/
 packages/demo-site/.next/cache/
 packages/demo-site/.next/trace/
 packages/demo-site/next-env.d.ts
-packages/demo-site/next.config.*
