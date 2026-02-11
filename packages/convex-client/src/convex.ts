@@ -1,6 +1,7 @@
 import {
   ClientOptions,
   AccountInfo,
+  AddressLike,
   Query,
   Result,
   Hex
@@ -9,6 +10,19 @@ import { KeyPair } from './KeyPair.js';
 import { Signer } from './Signer.js';
 import { KeyPairSigner } from './KeyPairSigner.js';
 import { hexToBytes, bytesToHex } from './crypto.js';
+
+/**
+ * Normalize an AddressLike to a canonical numeric string.
+ * Strips leading '#', validates that it's a non-negative integer.
+ * @throws Error if the input is not a valid Convex address
+ */
+function toAddress(input: AddressLike): string {
+  const s = String(input).replace(/^#/, '');
+  if (!/^\d+$/.test(s)) {
+    throw new Error(`Invalid Convex address: ${input}`);
+  }
+  return s;
+}
 
 /**
  * Type that accepts a public key in any common form:
@@ -214,18 +228,18 @@ export class Convex {
 
   /**
    * Set the address (account) for transactions
-   * @param address Account address (e.g., "#1678" or "1678")
+   * @param address Account address (e.g., "#1678", "1678", or 1678)
    */
-  setAddress(address: string): void {
-    this.address = address.replace(/^#/, '');
+  setAddress(address: AddressLike): void {
+    this.address = toAddress(address);
   }
 
   /**
    * Set account with a signer (convenience method)
-   * @param address Account address (e.g., "#1678")
+   * @param address Account address (e.g., "#1678", "1678", or 1678)
    * @param signer Signer or KeyPair instance
    */
-  setAccount(address: string, signer: SignerLike): void {
+  setAccount(address: AddressLike, signer: SignerLike): void {
     this.setSigner(signer);
     this.setAddress(address);
   }
@@ -240,11 +254,12 @@ export class Convex {
 
   /**
    * Transfer coins to another address (convenience method)
-   * @param to Destination address (e.g., "#42" or "42")
+   * @param to Destination address (e.g., "#42", "42", or 42)
    * @param amount Amount in coppers
    */
-  async transfer(to: string, amount: number): Promise<Result> {
-    return this.transact(`(transfer ${to} ${amount})`);
+  async transfer(to: AddressLike, amount: number): Promise<Result> {
+    const addr = toAddress(to);
+    return this.transact(`(transfer #${addr} ${amount})`);
   }
 
   /**
@@ -279,7 +294,10 @@ export class Convex {
   async query(query: Query | string): Promise<Result> {
     const queryParams = typeof query === 'string'
       ? { source: query }
-      : query;
+      : {
+          source: query.source,
+          ...(query.address != null && { address: toAddress(query.address) }),
+        };
 
     return this.request<Result>('/api/v1/query', {
       method: 'POST',

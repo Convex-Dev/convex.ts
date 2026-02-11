@@ -8,6 +8,7 @@ export { KeyPairSigner } from './KeyPairSigner.js';
 
 // Types
 export type {
+  AddressLike,
   ClientOptions,
   Hex,
   AccountInfo,

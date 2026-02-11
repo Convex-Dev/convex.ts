@@ -27,6 +27,14 @@ export type AccountKey = Hex | KeyPair;
  */
 export type SignerLike = Signer | KeyPair;
 
+/**
+ * Convex account address. Accepts:
+ * - number: `42`
+ * - string with hash: `"#42"`
+ * - plain numeric string: `"42"`
+ */
+export type AddressLike = string | number;
+
 // Re-export for convenience
 export type { KeyPair } from './KeyPair.js';
 
@@ -89,6 +97,6 @@ export interface Result {
 export interface Query {
   /** Convex Lisp source code to execute */
   source: string;
-  /** Optional account address to query from (e.g. "#42" or "42") */
-  address?: string;
+  /** Optional account address to query from (e.g. "#42", "42", or 42) */
+  address?: AddressLike;
 }

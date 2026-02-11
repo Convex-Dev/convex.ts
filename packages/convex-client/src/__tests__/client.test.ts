@@ -55,14 +55,25 @@ describe('Convex', () => {
       expect(client.hasAccount()).toBe(true);
     });
 
-    it('should return address after setAddress', () => {
+    it('should accept address as string with hash', () => {
       client.setAddress('#42');
       expect(client.getAddress()).toBe('42');
     });
 
-    it('should strip hash from address', () => {
-      client.setAddress('#1678');
+    it('should accept address as plain numeric string', () => {
+      client.setAddress('1678');
       expect(client.getAddress()).toBe('1678');
+    });
+
+    it('should accept address as number', () => {
+      client.setAddress(42);
+      expect(client.getAddress()).toBe('42');
+    });
+
+    it('should reject invalid address', () => {
+      expect(() => client.setAddress('garbage')).toThrow('Invalid Convex address');
+      expect(() => client.setAddress('')).toThrow('Invalid Convex address');
+      expect(() => client.setAddress('#abc')).toThrow('Invalid Convex address');
     });
   });
 
@@ -80,7 +91,7 @@ describe('Convex', () => {
         `${CONVEX_PEER_URL}/api/v1/query`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ address: '#12', source: '(* 2 3)' }),
+          body: JSON.stringify({ source: '(* 2 3)', address: '12' }),
         })
       );
 
@@ -102,6 +113,16 @@ describe('Convex', () => {
       );
 
       expect(result).toEqual(queryResult);
+    });
+
+    it('should accept numeric address in query', async () => {
+      const queryResult = { value: 100 };
+      (fetch as any).mockResolvedValueOnce(mockResponse(queryResult));
+
+      await client.query({ source: '(balance)', address: 42 });
+
+      const body = JSON.parse((fetch as any).mock.calls[0][1].body);
+      expect(body.address).toBe('42');
     });
 
     it('should throw on HTTP error', async () => {
