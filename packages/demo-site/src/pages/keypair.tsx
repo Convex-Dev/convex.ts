@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
-import { generateKeyPair, generateKeyPairFromSeed, bytesToHex, hexToBytes, LocalStorageKeyStore, KeyPair } from "@convex-world/convex-ts";
+import { bytesToHex, hexToBytes, LocalStorageKeyStore, KeyPair } from "@convex-world/convex-ts";
 import Button from "../components/Button";
 
 export default function KeyPairGeneratorPage() {
@@ -70,10 +70,10 @@ export default function KeyPairGeneratorPage() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const keyPair = await generateKeyPair();
-      const pubHex = bytesToHex(keyPair.publicKey);
+      const keyPair = KeyPair.generate();
+      const pubHex = keyPair.publicKeyHex;
       setPublicKey(pubHex);
-      setPrivateKey(bytesToHex(keyPair.privateKey));
+      setPrivateKey(keyPair.privateKeyHex);
       // Auto-populate alias with first 8 hex digits
       setNewAlias(`0x${pubHex.slice(0, 8)}`);
     } catch (error) {
@@ -193,9 +193,9 @@ export default function KeyPairGeneratorPage() {
       const seedBytes = hexToBytes(seedHex);
       
       // Generate key pair from the seed using proper Ed25519 derivation
-      const keyPair = await generateKeyPairFromSeed(seedBytes);
-      const pubHex = bytesToHex(keyPair.publicKey);
-      const privHex = bytesToHex(keyPair.privateKey);
+      const keyPair = KeyPair.fromSeed(seedBytes);
+      const pubHex = keyPair.publicKeyHex;
+      const privHex = keyPair.privateKeyHex;
       
       setPublicKey(pubHex);
       setPrivateKey(privHex);
