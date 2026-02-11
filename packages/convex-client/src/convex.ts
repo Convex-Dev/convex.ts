@@ -4,7 +4,8 @@ import {
   Transaction,
   TransactionResult,
   Query,
-  Result
+  Result,
+  Hex
 } from './types.js';
 import { KeyPair } from './KeyPair.js';
 import { Signer } from './Signer.js';
@@ -69,19 +70,23 @@ export class Convex {
   }
 
   /**
-   * Create a new account on the network.
-   * Generates a new keypair and sets it as the signer.
-   * @param initialBalance Optional faucet amount in coppers (e.g. 100000000 for 0.1 CVM)
+   * Create a new account on the network with the given public key.
+   *
+   * This is a network operation only — it does not change the client's
+   * signer or address. Call setAccount() afterwards if you want to use
+   * the new account for transactions.
+   *
+   * @param accountKey Ed25519 public key for the new account (hex string or Uint8Array)
+   * @param faucet Optional faucet amount in coppers (e.g. 100000000 for 0.1 CVM)
    */
-  async createAccount(initialBalance?: number): Promise<AccountInfo> {
-    const keyPair = KeyPair.generate();
-    this.setSigner(keyPair);
+  async createAccount(accountKey: Hex, faucet?: number): Promise<AccountInfo> {
+    const keyHex = typeof accountKey === 'string'
+      ? accountKey.replace(/^0x/i, '')
+      : bytesToHex(accountKey);
 
-    const accountKey = bytesToHex(this.signer!.getPublicKey());
-
-    const body: Record<string, unknown> = { accountKey };
-    if (initialBalance != null) {
-      body.faucet = initialBalance;
+    const body: Record<string, unknown> = { accountKey: keyHex };
+    if (faucet != null) {
+      body.faucet = faucet;
     }
 
     const data = await this.request<Record<string, unknown>>('/api/v1/createAccount', {
@@ -96,16 +101,14 @@ export class Convex {
       throw new Error('Failed to create account: No valid address returned');
     }
 
-    this.address = address.replace(/^#/, '');
-
     const balance = typeof data.balance === 'number' ? data.balance
       : typeof data.faucet === 'number' ? data.faucet : 0;
 
     return {
-      address: this.address,
+      address: address.replace(/^#/, ''),
       balance,
       sequence: 0,
-      publicKey: accountKey,
+      publicKey: keyHex,
     };
   }
 
