@@ -4,22 +4,8 @@ Tracked items for future development, roughly prioritised.
 
 ## High Priority
 
-### React Hooks (`convex-react`)
-The React package currently only has `Identicon` and `NetworkSelector` components. The main value-add would be hooks:
-- `useConvex()` — context provider/consumer
-- `useQuery(source)` — reactive query with loading/error states
-- `useTransact()` — transaction submission helper
-- `useAccount()` — current account info
-
-### CI/CD Workflows
-No `.github/workflows/` directory. Recommended minimum:
-- Lint + typecheck on PR
-- Run unit tests on push
-- Integration tests against test peer on push to master
-- Automated npm publish on tag
-
-### MemoryKeyStore / FileKeyStore
-`LocalStorageKeyStore` requires browser `localStorage`. A `MemoryKeyStore` (for testing/CLI) or `FileKeyStore` (for Node.js) would make the keystore abstraction useful outside the browser.
+### FileKeyStore
+`MemoryKeyStore` and `LocalStorageKeyStore` are done. A `FileKeyStore` for Node.js (JSON file on disk) would complete the keystore trio for CLI and server use cases.
 
 ## Medium Priority
 

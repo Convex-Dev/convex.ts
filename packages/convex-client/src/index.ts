@@ -41,3 +41,4 @@ export {
   LocalStorageKeyStore,
   type EncryptedPayload,
 } from './keystore.js';
+export { MemoryKeyStore } from './MemoryKeyStore.js';
