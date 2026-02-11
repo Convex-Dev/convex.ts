@@ -10,6 +10,7 @@ export { KeyPairSigner } from './KeyPairSigner.js';
 export { AssetHandle } from './AssetHandle.js';
 export { FungibleToken } from './FungibleToken.js';
 export { CnsHandle } from './CnsHandle.js';
+export { AccountHandle } from './AccountHandle.js';
 
 // Error handling
 export { ConvexError } from './ConvexError.js';

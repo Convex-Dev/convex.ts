@@ -62,4 +62,33 @@ describe('integration (test peer)', () => {
     expect(typeof info.balance).toBe('number');
     expect(typeof info.sequence).toBe('number');
   }, 15000);
+
+  // -- AccountHandle integration tests --
+
+  it('should query balance via account handle', async () => {
+    const handle = client.account(client.getAddress()!);
+    const result = await handle.balance();
+    expect(typeof result.value).toBe('number');
+    expect(result.value).toBeGreaterThan(0);
+  }, 15000);
+
+  it('should query sequence via account handle', async () => {
+    const handle = client.account(client.getAddress()!);
+    const result = await handle.getSequence();
+    expect(typeof result.value).toBe('number');
+    expect(result.value).toBeGreaterThanOrEqual(0);
+  }, 15000);
+
+  it('should query account key via handle', async () => {
+    const handle = client.account(client.getAddress()!);
+    const result = await handle.getKey();
+    // CVM returns key as 0x-prefixed blob string
+    expect(result.result).toContain(kp.publicKeyHex);
+  }, 15000);
+
+  it('should query controller via handle (nil for new account)', async () => {
+    const handle = client.account(client.getAddress()!);
+    const result = await handle.getController();
+    expect(result.result).toBe('nil');
+  }, 15000);
 });

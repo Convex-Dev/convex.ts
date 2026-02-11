@@ -2,6 +2,7 @@ import { Convex } from '../convex.js';
 import { AssetHandle } from '../AssetHandle.js';
 import { FungibleToken } from '../FungibleToken.js';
 import { CnsHandle } from '../CnsHandle.js';
+import { AccountHandle } from '../AccountHandle.js';
 import { KeyPair } from '../KeyPair.js';
 import { vi } from 'vitest';
 
@@ -246,5 +247,154 @@ describe('CnsHandle', () => {
 
     const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
     expect(prepareBody.source).toBe("(@convex.cns/control 'user.mike #99)");
+  });
+});
+
+describe('AccountHandle', () => {
+  let client: Convex;
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    client = new Convex(PEER_URL);
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('should create via factory method', () => {
+    const handle = client.account('#13');
+    expect(handle).toBeInstanceOf(AccountHandle);
+    expect(handle.getAddress()).toBe('#13');
+  });
+
+  it('should accept numeric address', () => {
+    const handle = client.account(42);
+    expect(handle.getAddress()).toBe(42);
+  });
+
+  it('should accept CNS address', () => {
+    const handle = client.account('@user.mike');
+    expect(handle.getAddress()).toBe('@user.mike');
+  });
+
+  it('should query balance', async () => {
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: 1000000 }));
+    const result = await client.account('#13').balance();
+    expect(lastSource()).toBe('(balance #13)');
+    expect(result.value).toBe(1000000);
+  });
+
+  it('should query sequence', async () => {
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: 5 }));
+    const result = await client.account('#13').getSequence();
+    expect(lastSource()).toBe('(:sequence (account #13))');
+    expect(result.value).toBe(5);
+  });
+
+  it('should query controller', async () => {
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: null, result: 'nil' }));
+    await client.account('#13').getController();
+    expect(lastSource()).toBe('(:controller (account #13))');
+  });
+
+  it('should set controller directly when client IS the account (key authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#42').setController('#99');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe('(set-controller #99)');
+  });
+
+  it('should set controller via eval-as when client is NOT the account (controller authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#13').setController('#99');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe("(eval-as #13 '(set-controller #99))");
+  });
+
+  it('should set controller to nil directly (key authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#42').setController(null);
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe('(set-controller nil)');
+  });
+
+  it('should set controller to nil via eval-as (controller authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#13').setController(null);
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe("(eval-as #13 '(set-controller nil))");
+  });
+
+  it('should query account key', async () => {
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: '0xabcdef', result: '0xabcdef' }));
+    await client.account('#13').getKey();
+    expect(lastSource()).toBe('(:key (account #13))');
+  });
+
+  it('should set key directly when client IS the account (key authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#42').setKey('aabbccdd');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe('(set-key 0xaabbccdd)');
+  });
+
+  it('should set key via eval-as when client is NOT the account (controller authority)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#13').setKey('aabbccdd');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe("(eval-as #13 '(set-key 0xaabbccdd))");
+  });
+
+  it('should strip 0x prefix from key', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('#42').setKey('0xaabbccdd');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe('(set-key 0xaabbccdd)');
+  });
+
+  it('should use eval-as for CNS address (cannot compare to numeric)', async () => {
+    const kp = KeyPair.generate();
+    client.setAccount('#42', kp);
+    (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+    (fetch as any).mockResolvedValueOnce(mockResponse({ value: true }));
+
+    await client.account('@user.mike').setController('#99');
+
+    const prepareBody = JSON.parse((fetch as any).mock.calls[0][1].body);
+    expect(prepareBody.source).toBe("(eval-as @user.mike '(set-controller #99))");
   });
 });

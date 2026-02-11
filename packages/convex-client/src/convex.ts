@@ -15,6 +15,7 @@ import { toAddress, toNumericAddress, formatBalance, throwIfError } from './form
 import { AssetHandle } from './AssetHandle.js';
 import { FungibleToken } from './FungibleToken.js';
 import { CnsHandle } from './CnsHandle.js';
+import { AccountHandle } from './AccountHandle.js';
 
 /**
  * Type that accepts a public key in any common form:
@@ -355,5 +356,13 @@ export class Convex {
    */
   cns(name: string): CnsHandle {
     return new CnsHandle(this, name);
+  }
+
+  /**
+   * Create an account handle for querying and managing a Convex account.
+   * @param address Account address (e.g. "#13", 13, or "@user.mike")
+   */
+  account(address: AddressLike): AccountHandle {
+    return new AccountHandle(this, address);
   }
 }
