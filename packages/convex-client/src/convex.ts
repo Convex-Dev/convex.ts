@@ -12,9 +12,9 @@ import { KeyPairSigner } from './KeyPairSigner.js';
 import { hexToBytes, bytesToHex } from './crypto.js';
 
 /**
- * Normalize an AddressLike to canonical form:
- * - Numeric: strips '#', returns digits (e.g. "42")
- * - CNS: returns with '@' prefix (e.g. "@convex.core")
+ * Normalize an AddressLike to canonical Convex form for CVM source:
+ * - Numeric: `"#42"` (with hash prefix)
+ * - CNS: `"@convex.core"` (with @ prefix)
  * @throws Error if the input is not a valid Convex address
  */
 function toAddress(input: AddressLike): string {
@@ -31,16 +31,20 @@ function toAddress(input: AddressLike): string {
   if (!/^\d+$/.test(num)) {
     throw new Error(`Invalid Convex address: ${input}`);
   }
-  return num;
+  return `#${num}`;
 }
 
 /**
- * Format an address for use in CVM source code.
- * Numeric addresses get '#' prefix, CNS addresses pass through as-is.
+ * Extract the numeric part of a Convex address for REST API calls.
+ * CNS addresses are not supported here — the REST API requires numeric addresses.
+ * @throws Error if the input is not a numeric Convex address
  */
-function toCvmAddress(input: AddressLike): string {
-  const addr = toAddress(input);
-  return addr.startsWith('@') ? addr : `#${addr}`;
+function toNumericAddress(input: AddressLike): string {
+  const s = String(input).replace(/^#/, '');
+  if (!/^\d+$/.test(s)) {
+    throw new Error(`Numeric address required (got "${input}"). CNS names must be resolved first.`);
+  }
+  return s;
 }
 
 /**
@@ -246,11 +250,12 @@ export class Convex {
   }
 
   /**
-   * Set the address (account) for transactions
+   * Set the address (account) for transactions.
+   * Must be a numeric address — CNS names need to be resolved first.
    * @param address Account address (e.g., "#1678", "1678", or 1678)
    */
   setAddress(address: AddressLike): void {
-    this.address = toAddress(address);
+    this.address = toNumericAddress(address);
   }
 
   /**
@@ -277,7 +282,7 @@ export class Convex {
    * @param amount Amount in coppers
    */
   async transfer(to: AddressLike, amount: number): Promise<Result> {
-    return this.transact(`(transfer ${toCvmAddress(to)} ${amount})`);
+    return this.transact(`(transfer ${toAddress(to)} ${amount})`);
   }
 
   /**
@@ -314,7 +319,7 @@ export class Convex {
       ? { source: query }
       : {
           source: query.source,
-          ...(query.address != null && { address: toAddress(query.address) }),
+          ...(query.address != null && { address: toNumericAddress(query.address) }),
         };
 
     return this.request<Result>('/api/v1/query', {
