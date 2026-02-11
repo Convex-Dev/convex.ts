@@ -2,17 +2,12 @@
 
 [![npm version](https://img.shields.io/npm/v/@convex-world/convex-ts.svg)](https://www.npmjs.com/package/@convex-world/convex-ts)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Convex-Dev/convex.ts/blob/master/LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-> Official TypeScript/JavaScript client for the [Convex](https://convex.world) decentralized lattice network.
+Official TypeScript/JavaScript client for the [Convex](https://convex.world) decentralised lattice network.
 
-**Convex** is building fair, inclusive, efficient, and sustainable economic systems based on decentralized technology for the 21st century. Convex is a deterministic economic system shared by humans and autonomous agents, where both participate under the same rules, the same physics, and the same finality.
+**[Documentation](https://docs.convex.world)** | **[Website](https://convex.world)** | **[Discord](https://discord.com/invite/xfYGq4CT7v)**
 
-📚 **[Full Documentation](https://docs.convex.world)** | 🌐 **[Website](https://convex.world)** | 💬 **[Discord Community](https://discord.com/invite/xfYGq4CT7v)**
-
----
-
-## ⚡ Quick Start
+## Quick Start
 
 ### Installation
 
@@ -22,96 +17,62 @@ npm install @convex-world/convex-ts
 
 ### Read-Only Query (No Account Needed)
 
-The simplest way to get started is with read-only queries:
+```typescript
+import { Convex } from '@convex-world/convex-ts';
+
+const convex = new Convex('https://peer.convex.live');
+
+// Query an account balance (free, no keys needed)
+const result = await convex.query('(balance #9)');
+console.log('Balance:', result.value);
+
+// The result field has the CVM printed representation (more precise)
+console.log('Result:', result.result);
+```
+
+### Using an Existing Account
+
+If you have a Convex account and Ed25519 seed (private key):
+
+```typescript
+import { Convex, KeyPair } from '@convex-world/convex-ts';
+
+const convex = new Convex('https://peer.convex.live');
+
+// Create KeyPair from your 32-byte Ed25519 seed (hex string or Uint8Array)
+const keyPair = KeyPair.fromSeed('your-64-char-hex-seed...');
+
+// Set your account address and key pair
+convex.setAccount('#1678', keyPair);
+
+// Submit a transaction (Convex Lisp code)
+const result = await convex.transact('(transfer #456 1000000000)');
+
+if (!result.errorCode) {
+  console.log('Success! Result:', result.result);
+  console.log('Juice used:', result.info?.juice);
+} else {
+  console.error('Error:', result.errorCode, result.value);
+}
+```
+
+### Creating a New Account
 
 ```typescript
 import { Convex } from '@convex-world/convex-ts';
 
-// Connect to the Convex network
 const convex = new Convex('https://peer.convex.live');
 
-// Query an account balance (read-only, no keys needed)
-const result = await convex.query('(balance #9)');
-console.log('Balance:', result.value);
+// Creates a new account with a generated key pair
+// Optional: request faucet funds (in coppers)
+const account = await convex.createAccount(100_000_000);
 
-// Query other network state
-const coinSupply = await convex.query('(call *registry* (lookup :CAD001))');
+console.log('Address:', account.address);
+console.log('Public key:', account.publicKey);
+console.log('Balance:', account.balance);
 ```
 
-### Using Your Existing Account
-
-If you have a Convex account and private key:
-
-```typescript
-import { Convex, KeyPair } from '@convex-world/convex-ts';
-
-// Connect to peer
-const convex = new Convex('https://peer.convex.live');
-
-// Create KeyPair from your existing keys
-const myKeyPair = await KeyPair.fromHex({
-  publicKey: 'your-public-key-hex',
-  privateKey: 'your-private-key-hex'
-});
-
-convex.setAccount('#1678', myKeyPair);
-
-// Now you can transact
-const result = await convex.transact({
-  to: '#456',
-  amount: 1_000_000,  // 1 Convex Coin (amounts are in copper)
-  data: { memo: 'Payment' }
-});
-
-console.log('Transaction hash:', result.hash);
-```
-
-### Loading Keys from Seed
-
-```typescript
-import { Convex, KeyPair } from '@convex-world/convex-ts';
-
-// Derive key pair from your Ed25519 seed (32 bytes)
-const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = KeyPair.fromSeed(seed);
-
-// Or from hex seed
-const keyPair = KeyPair.fromSeed('0123456789abcdef...');
-
-// Connect and use your account
-const convex = new Convex('https://peer.convex.live');
-convex.setAccount('#1678', keyPair);
-
-// Query your balance
-const info = await convex.getAccountInfo();
-console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
-```
-
-## 🎯 What is Convex?
-
-[Convex](https://convex.world) is a decentralized lattice network that provides:
-
-- **Deterministic Execution** - Same input, same output, every time
-- **Lattice Technology** - Advanced data structures that enable true decentralization
-- **Convergent Proof of Stake** - Fair and efficient consensus mechanism
-- **Self-Sovereign Accounts** - You control your own digital identity and assets
-- **Convex Lisp** - Powerful smart contract language based on lambda calculus
-
-Learn more in the [Convex Documentation](https://docs.convex.world).
-
-## ✨ Features
-
-- 🔍 **Read-Only Queries** - Query network state without an account
-- 🔐 **Account Management** - Use your existing Convex account
-- 🔑 **Ed25519 Cryptography** - Industry-standard key generation and signing
-- 💸 **Transactions** - Submit and track transactions with full type safety
-- 🎨 **Identicons** - Generate unique visual identifiers for addresses
-- 💾 **Secure Keystore** - Encrypted key storage and management
-- 📘 **Full TypeScript Support** - Complete type definitions included
-- 🌐 **Modern ESM** - ES module support for modern JavaScript
-- 🧪 **Production Ready** - Used with live Convex networks
-
-## 📖 Complete API Reference
+## API Reference
 
 ### Connecting to the Network
 
@@ -121,484 +82,242 @@ import { Convex } from '@convex-world/convex-ts';
 // Connect to production network
 const convex = new Convex('https://peer.convex.live');
 
-// Connect with custom options
+// With options
 const convex = new Convex('https://peer.convex.live', {
-  timeout: 30000,  // Request timeout in milliseconds
-  headers: {
-    'X-Custom-Header': 'value'
-  }
+  timeout: 30000,
+  headers: { 'X-Custom-Header': 'value' }
 });
 
 // Change timeout after creation
-convex.setTimeout(60000);  // 60 seconds
+convex.setTimeout(60000);
 ```
 
-**Network URLs:**
+**Peer URLs:**
 - Production: `https://peer.convex.live`
-- Testnet: `https://testnet.convex.live` (has faucet for testing)
-- Local: `http://localhost:8080` (for development)
+- Local development: `http://localhost:8080` (via Docker)
+
+### Queries (Free, Read-Only)
+
+Queries don't modify state and don't require signing:
+
+```typescript
+// Simple expression
+const result = await convex.query('(+ 1 2 3)');
+// result.value = 6
+
+// Account balance
+const balance = await convex.query('(balance #9)');
+
+// With address context
+const result = await convex.query({
+  address: '#1678',
+  source: '*balance*'
+});
+
+// Network state
+const timestamp = await convex.query('*timestamp*');
+const juicePrice = await convex.query('*juice-price*');
+```
+
+**Result fields:**
+- `value` - JSON-converted CVM value (numbers, strings, booleans map directly)
+- `result` - CVM printed representation as a string (more accurate than `value`)
+- `errorCode` - Error keyword string (e.g. `"NOBODY"`, `"SYNTAX"`), absent on success
+- `info` - Execution metadata (`juice`, `fees`, `mem`, `source`, `trace`)
+
+### Transactions
+
+Transactions modify state and require an account with signing:
+
+```typescript
+// Execute Convex Lisp code
+const result = await convex.transact('(transfer #456 1000000000)');
+
+// Convenience transfer method
+const result = await convex.transfer('#456', 1_000_000_000);
+
+// Deploy code
+await convex.transact('(def my-fn (fn [x] (* x 2)))');
+
+// Call a smart contract
+await convex.transact('(call #789 (my-fn 42))');
+```
+
+Transactions use a two-step prepare/submit flow internally:
+1. `POST /api/v1/transaction/prepare` - get a hash for the transaction
+2. Sign the hash with Ed25519
+3. `POST /api/v1/transaction/submit` - submit with signature
 
 ### Account Setup
-
-#### Using an Existing Account
-
-Most users already have a Convex account. Set it up like this:
 
 ```typescript
 import { KeyPair } from '@convex-world/convex-ts';
 
-// You need:
-// 1. Your account address (e.g., "#1678")
-// 2. Your Ed25519 seed (32 bytes)
+// Generate a new random key pair
+const keyPair = KeyPair.generate();
 
-// From seed hex string (recommended)
-const keyPair = KeyPair.fromSeed('your-32-byte-seed-hex');
+// Or derive deterministically from a seed (32 bytes, hex or Uint8Array)
+const keyPair = KeyPair.fromSeed('0123456789abcdef...');
+const keyPair = KeyPair.fromSeed(new Uint8Array(32));
 
-// Or from seed bytes
-const keyPair = KeyPair.fromSeed(
-  new Uint8Array([/* 32 seed bytes */])
-);
-
-// Note: Public key is automatically derived from seed
+// Set account: address + key pair
 convex.setAccount('#1678', keyPair);
+
+// Or set separately
+convex.setSigner(keyPair);
+convex.setAddress('#1678');
+
+// Get account info from the network
+const info = await convex.getAccountInfo();
+console.log('Balance:', info.balance, 'coppers');
+console.log('Sequence:', info.sequence);
 ```
 
-#### Using Custom Signers
+> **Note:** Convex amounts are in coppers. 1 Convex Coin = 10^9 coppers.
+
+### Key Pair
+
+```typescript
+import { KeyPair } from '@convex-world/convex-ts';
+
+const keyPair = KeyPair.generate();
+
+// Access keys
+console.log('Public key:', keyPair.publicKeyHex);   // hex string
+console.log('Public key:', keyPair.publicKey);       // Uint8Array
+
+// Export
+const { publicKey, privateKey } = keyPair.toHex();   // both as hex strings
+const obj = keyPair.toObject();                       // both as Uint8Array
+
+// String representation (shows public key only, for safety)
+console.log(keyPair.toString());
+// KeyPair { publicKey: abcd1234ef567890... }
+```
+
+### Custom Signers
 
 For hardware wallets, browser extensions, or other signing mechanisms:
 
 ```typescript
 import { type Signer } from '@convex-world/convex-ts';
 
-// Implement custom signer
 class HardwareWalletSigner implements Signer {
-  async getPublicKey(): Promise<Uint8Array> {
-    // Get public key from hardware wallet
-    return await this.wallet.getPublicKey();
+  getPublicKey(): Uint8Array {
+    return this.cachedPublicKey;
   }
 
   async sign(message: Uint8Array): Promise<Uint8Array> {
-    // Sign with hardware wallet (may prompt user)
     return await this.wallet.sign(message);
   }
 
-  async signFor(message: Uint8Array, publicKey: Hex): Promise<Uint8Array> {
-    // Sign with specific key (for multi-key wallets)
+  async signFor(publicKey: Hex, message: Uint8Array): Promise<Uint8Array> {
     return await this.wallet.signWithKey(message, publicKey);
   }
 }
 
-// Use custom signer
-const signer = new HardwareWalletSigner();
-convex.setSigner(signer);
+convex.setSigner(new HardwareWalletSigner());
 convex.setAddress('#1678');
 ```
 
-#### Reusing Signer for Multiple Addresses
-
-Same signer can sign for multiple accounts:
+### Signing and Verification
 
 ```typescript
-const keyPair = KeyPair.fromSeed(mySeed);
-convex.setSigner(keyPair);  // Set signer once
+import { sign, verify, hexToBytes } from '@convex-world/convex-ts';
 
-// Use different addresses with same signer
-convex.setAddress('#1678');
-await convex.transfer('#456', 1_000_000);
-
-convex.setAddress('#9999');  // Switch to different address
-await convex.transfer('#456', 500_000);
-```
-
-#### Deriving from Seed
-
-If you have an Ed25519 seed (32 bytes):
-
-```typescript
-import { KeyPair } from '@convex-world/convex-ts';
-
-// From bytes
-const seed = new Uint8Array([/* your 32-byte seed */]);
-const keyPair = KeyPair.fromSeed(seed);
-
-// Or from hex string
-const keyPair = KeyPair.fromSeed('0123456789abcdef...');
-
-convex.setAccount('#1678', keyPair);
-```
-
-#### Getting Account Information
-
-```typescript
-const info = await convex.getAccountInfo();
-
-console.log('Address:', info.address);
-console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
-console.log('Sequence:', info.sequence);  // Transaction counter
-```
-
-> **Note:** Amounts are in "copper coins" where 1 Convex Coin = 1,000,000 copper.
-
-### Queries (Read-Only)
-
-Query network state without needing an account or keys:
-
-```typescript
-// Query any account's balance
-const balance = await convex.query('(balance #9)');
-
-// Query smart contracts
-const registryInfo = await convex.query('(call *registry* (cns-resolve :example.domain))');
-
-// Execute Convex Lisp expressions
-const mathResult = await convex.query('(+ 1 2 3)');  // Returns 6
-
-// Query with address context (use object form when needed)
-const result = await convex.query({
-  address: '#1678',
-  source: '*balance*'  // Uses context address
-});
-
-console.log('Result:', result.value);
-```
-
-Learn more about Convex Lisp in the [documentation](https://docs.convex.world).
-
-### Transactions
-
-Submit transactions to modify network state:
-
-```typescript
-const result = await convex.transact({
-  to: '#456',              // Destination address
-  amount: 1_000_000,       // Amount in copper (1 Convex Coin)
-  sequence: undefined,     // Optional: auto-increments
-  data: {                  // Optional: additional data
-    memo: 'Payment for services',
-    invoice: 'INV-001'
-  }
-});
-
-if (result.status === 'success') {
-  console.log('✅ Transaction successful!');
-  console.log('   Hash:', result.hash);
-  console.log('   Result:', result.result);
-} else {
-  console.error('❌ Transaction failed:', result.error);
-}
-```
-
-**Common Transaction Patterns:**
-
-```typescript
-// Simple transfer (convenience method)
-await convex.transfer('#456', 1_000_000);
-
-// Execute Convex Lisp code
-await convex.transact('(transfer #456 1000000)');
-
-// Deploy code
-await convex.transact('(def my-function (fn [x] (* x 2)))');
-
-// Call a smart contract
-await convex.transact('(call #789 (my-function arg1 arg2))');
-
-// Complex transaction with data
-await convex.transact({
-  to: '#789',
-  amount: 1_000_000,
-  data: { memo: 'Payment' }
-});
-```
-
-#### Transaction Sequence Numbers
-
-```typescript
-// Get current sequence number
-const seq = await convex.getSequence();
-console.log('Next transaction sequence:', seq);
-
-// Explicitly set sequence (rarely needed, auto-managed)
-await convex.transact({
-  to: '#456',
-  amount: 1_000_000,
-  sequence: seq
-});
-```
-
-### Cryptography
-
-#### Key Pair Generation
-
-```typescript
-import { KeyPair } from '@convex-world/convex-ts';
-
-// Generate random key pair
-const keyPair = KeyPair.generate();
-
-// Access keys as hex strings (convenient)
-console.log('Public key:', keyPair.publicKeyHex);
-console.log('Private key:', keyPair.privateKeyHex);
-
-// Access keys as Uint8Array
-console.log('Public key bytes:', keyPair.publicKey);
-console.log('Private key bytes:', keyPair.privateKey);
-
-// Generate from seed (deterministic)
-const seed = new Uint8Array(32);  // Your seed bytes
-const keyPair = KeyPair.fromSeed(seed);
-
-// Or from hex seed
-const keyPair = KeyPair.fromSeed('0123456789abcdef...');
-
-// Import from hex strings
-const keyPair = await KeyPair.fromHex({
-  publicKey: 'abcd1234...',
-  privateKey: '5678ef90...'
-});
-
-// Export as hex
-const { publicKey, privateKey } = keyPair.toHex();
-
-// Export as plain object (for backward compatibility)
-const obj = keyPair.toObject();  // { publicKey: Uint8Array, privateKey: Uint8Array }
-```
-
-#### Signing and Verification
-
-```typescript
-import { sign, verify } from '@convex-world/convex-ts';
-
-const message = 'Hello, Convex!';
-
-// Sign a message
+// Sign raw bytes
+const message = new Uint8Array([1, 2, 3]);
 const signature = await sign(message, keyPair.privateKey);
 
-// Verify the signature
-const isValid = await verify(signature, message, keyPair.publicKey);
-console.log('Signature valid:', isValid);  // true
+// Verify
+const valid = await verify(signature, message, keyPair.publicKey);
 ```
 
-### Keystore Management
+### Encrypted Key Storage (Browser)
 
-Securely store and manage your cryptographic keys:
+Store keys securely in the browser using AES-GCM encryption:
 
 ```typescript
-import { Keystore } from '@convex-world/convex-ts';
+import { LocalStorageKeyStore, KeyPair } from '@convex-world/convex-ts';
 
-// Create a new encrypted keystore
-const keystore = await Keystore.create('my-secure-password');
+const keystore = new LocalStorageKeyStore();
+const keyPair = KeyPair.generate();
 
-// Save to file
-await keystore.save('./my-keystore.json');
+// Store encrypted (requires password)
+await keystore.storeKeyPair('my-account', keyPair, 'my-password');
 
-// Load from file
-const loaded = await Keystore.load('./my-keystore.json', 'my-secure-password');
+// Retrieve (requires password to decrypt)
+const restored = await keystore.getKeyPair('my-account', 'my-password');
 
-// Export as JSON string
-const json = await keystore.export('my-secure-password');
+// Unlock to session storage (quick access without re-entering password)
+await keystore.unlock('my-account', 'my-password');
+const unlocked = keystore.getUnlockedKeyPair('my-account');
 
-// Import from JSON string
-const imported = await Keystore.import(json, 'my-secure-password');
+// Lock (clears from session storage)
+keystore.lock('my-account');
+
+// List stored keys
+const aliases = await keystore.listAliases();
+
+// Get public key without password
+const pubKey = keystore.getPublicKey('my-account');
 ```
 
 ### Identicons
 
-Generate unique visual identifiers for addresses:
+Generate deterministic visual identifiers for addresses:
 
 ```typescript
-import { generateIdenticonGrid } from '@convex-world/convex-ts';
+import { generateIdenticonGrid, hexToBytes } from '@convex-world/convex-ts';
 
-const address = Buffer.from('1234567890abcdef', 'hex');
-const grid = generateIdenticonGrid(address, 7);  // 7x7 grid
-
-// Use the grid to render an identicon in your UI
-// Each element is an RGB color value
+const addressBytes = hexToBytes('1234567890abcdef1234567890abcdef');
+const grid = generateIdenticonGrid(addressBytes, 7);  // 7x7 grid of RGB values
 ```
 
-## 🔧 TypeScript Support
+## TypeScript Support
 
-This library is written in TypeScript and includes complete type definitions:
+Full type definitions are included:
 
 ```typescript
 import type {
   ClientOptions,
-  KeyPair,
   AccountInfo,
   Transaction,
+  Result,
   TransactionResult,
+  ResultInfo,
   Query,
-  Result
 } from '@convex-world/convex-ts';
-
-// Type-safe development
-const tx: Transaction = {
-  to: '#123',
-  amount: 1000000
-};
-
-const handleResult = (result: TransactionResult) => {
-  if (result.status === 'success') {
-    console.log(result.hash);
-  } else {
-    console.error(result.error);
-  }
-};
 ```
 
-## 🛡️ Error Handling
+`TransactionResult` is a type alias for `Result` — both queries and transactions return the same JSON structure from the peer API.
 
-All API methods can throw errors. Always wrap in try-catch:
+## Error Handling
 
 ```typescript
 try {
-  const result = await convex.transact({
-    to: '#123',
-    amount: 1_000_000
-  });
-  console.log('Success:', result.hash);
+  const result = await convex.transact('(transfer #456 1000000000)');
+
+  if (result.errorCode) {
+    // CVM-level error (e.g. insufficient funds)
+    console.error('CVM error:', result.errorCode, result.value);
+  } else {
+    console.log('Success:', result.result);
+  }
 } catch (error) {
-  if (error instanceof Error) {
-    console.error('Transaction failed:', error.message);
-  }
+  // Network/HTTP error
+  console.error('Request failed:', error);
 }
 ```
 
-Common error scenarios:
-- Network connectivity issues
-- Invalid addresses or amounts
-- Insufficient balance
-- Invalid signatures
-- Peer unavailable
+## Resources
 
-## 📝 Examples
+- [Convex Documentation](https://docs.convex.world)
+- [Convex Website](https://convex.world)
+- [Discord Community](https://discord.com/invite/xfYGq4CT7v)
+- [GitHub](https://github.com/Convex-Dev/convex.ts)
+- [npm Package](https://www.npmjs.com/package/@convex-world/convex-ts)
 
-### Complete Application
+## License
 
-```typescript
-import { Convex, KeyPair } from '@convex-world/convex-ts';
-
-async function main() {
-  // Connect to network
-  const convex = new Convex('https://peer.convex.live');
-
-  try {
-    // Set up with your account using seed from environment
-    const seedHex = process.env.CONVEX_SEED!;
-    const keyPair = KeyPair.fromSeed(seedHex);
-    convex.setAccount('#1678', keyPair);
-
-    // Check balance
-    const info = await convex.getAccountInfo();
-    console.log('Balance:', info.balance / 1_000_000, 'Convex Coins');
-
-    // Transfer funds
-    const result = await convex.transfer('#456', 1_000_000);
-
-    if (result.status === 'success') {
-      console.log('✅ Transaction successful!');
-      console.log('   Hash:', result.hash);
-    } else {
-      console.error('❌ Failed:', result.error);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-main();
-```
-
-### Using with React
-
-```typescript
-import { useState, useEffect } from 'react';
-import { Convex } from '@convex-world/convex-ts';
-
-function ConvexWallet({ accountAddress, keyPair }) {
-  const [convex] = useState(() => new Convex('https://peer.convex.live'));
-  const [balance, setBalance] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function loadAccount() {
-      try {
-        convex.setAccount(accountAddress, keyPair);
-        const info = await convex.getAccountInfo();
-        setBalance(info.balance);
-      } catch (error) {
-        console.error('Failed to load account:', error);
-      }
-    }
-    loadAccount();
-  }, [convex, accountAddress, keyPair]);
-
-  return (
-    <div>
-      <h1>My Convex Wallet</h1>
-      {balance !== null ? (
-        <p>Balance: {(balance / 1_000_000).toFixed(2)} Convex Coins</p>
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
-  );
-}
-```
-
-### Read-Only Dashboard
-
-Query network data without authentication:
-
-```typescript
-import { Convex } from '@convex-world/convex-ts';
-
-async function displayNetworkStats() {
-  const convex = new Convex('https://peer.convex.live');
-
-  // Query multiple accounts
-  const addresses = ['#9', '#10', '#11'];
-
-  for (const addr of addresses) {
-    const result = await convex.query({
-      address: addr,
-      source: `(balance ${addr})`
-    });
-    console.log(`${addr}: ${result.value} copper`);
-  }
-
-  // Query global state
-  const supply = await convex.query('(call *registry* (lookup :CAD001))');
-  console.log('Coin supply:', supply.value);
-}
-```
-
-## 🔗 Resources
-
-- **📚 Documentation** - [docs.convex.world](https://docs.convex.world)
-- **🌐 Website** - [convex.world](https://convex.world)
-- **💬 Discord Community** - [Join our Discord](https://discord.com/invite/xfYGq4CT7v)
-- **🐙 GitHub** - [Convex-Dev/convex.ts](https://github.com/Convex-Dev/convex.ts)
-- **📦 npm Package** - [@convex-world/convex-ts](https://www.npmjs.com/package/@convex-world/convex-ts)
-
-## 🤝 Contributing
-
-We welcome contributions! Please see the [main repository](https://github.com/Convex-Dev/convex.ts) for:
-
-- Development guidelines
-- Code of conduct
-- How to submit pull requests
-- Issue reporting
-
-## 📄 License
-
-Apache-2.0 License - see [LICENSE](https://github.com/Convex-Dev/convex.ts/blob/master/LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-Built with ❤️ by the [Convex Foundation](https://convex.world) and the open-source community.
-
-Special thanks to all [contributors](https://github.com/Convex-Dev/convex.ts/graphs/contributors) who have helped make this library better!
-
----
-
-**Ready to build on Convex?** Start with our [Getting Started Guide](https://docs.convex.world/getting-started) or join our [Discord](https://discord.com/invite/xfYGq4CT7v) to connect with the community! 🚀
+Apache-2.0 — see [LICENSE](https://github.com/Convex-Dev/convex.ts/blob/master/LICENSE).
