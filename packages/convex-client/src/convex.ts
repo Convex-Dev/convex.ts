@@ -12,16 +12,35 @@ import { KeyPairSigner } from './KeyPairSigner.js';
 import { hexToBytes, bytesToHex } from './crypto.js';
 
 /**
- * Normalize an AddressLike to a canonical numeric string.
- * Strips leading '#', validates that it's a non-negative integer.
+ * Normalize an AddressLike to canonical form:
+ * - Numeric: strips '#', returns digits (e.g. "42")
+ * - CNS: returns with '@' prefix (e.g. "@convex.core")
  * @throws Error if the input is not a valid Convex address
  */
 function toAddress(input: AddressLike): string {
-  const s = String(input).replace(/^#/, '');
-  if (!/^\d+$/.test(s)) {
+  const s = String(input);
+  // CNS address: @name.path
+  if (s.startsWith('@')) {
+    if (!/^@[a-zA-Z][a-zA-Z0-9._-]*$/.test(s)) {
+      throw new Error(`Invalid CNS address: ${input}`);
+    }
+    return s;
+  }
+  // Numeric address: 42, #42, "42"
+  const num = s.replace(/^#/, '');
+  if (!/^\d+$/.test(num)) {
     throw new Error(`Invalid Convex address: ${input}`);
   }
-  return s;
+  return num;
+}
+
+/**
+ * Format an address for use in CVM source code.
+ * Numeric addresses get '#' prefix, CNS addresses pass through as-is.
+ */
+function toCvmAddress(input: AddressLike): string {
+  const addr = toAddress(input);
+  return addr.startsWith('@') ? addr : `#${addr}`;
 }
 
 /**
@@ -258,8 +277,7 @@ export class Convex {
    * @param amount Amount in coppers
    */
   async transfer(to: AddressLike, amount: number): Promise<Result> {
-    const addr = toAddress(to);
-    return this.transact(`(transfer #${addr} ${amount})`);
+    return this.transact(`(transfer ${toCvmAddress(to)} ${amount})`);
   }
 
   /**

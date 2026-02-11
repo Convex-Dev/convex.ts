@@ -70,10 +70,20 @@ describe('Convex', () => {
       expect(client.getAddress()).toBe('42');
     });
 
+    it('should accept CNS address', () => {
+      client.setAddress('@convex.core');
+      expect(client.getAddress()).toBe('@convex.core');
+    });
+
     it('should reject invalid address', () => {
       expect(() => client.setAddress('garbage')).toThrow('Invalid Convex address');
       expect(() => client.setAddress('')).toThrow('Invalid Convex address');
       expect(() => client.setAddress('#abc')).toThrow('Invalid Convex address');
+    });
+
+    it('should reject invalid CNS address', () => {
+      expect(() => client.setAddress('@')).toThrow('Invalid CNS address');
+      expect(() => client.setAddress('@123')).toThrow('Invalid CNS address');
     });
   });
 

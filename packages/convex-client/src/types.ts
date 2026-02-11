@@ -32,6 +32,7 @@ export type SignerLike = Signer | KeyPair;
  * - number: `42`
  * - string with hash: `"#42"`
  * - plain numeric string: `"42"`
+ * - CNS name: `"@convex.core"`, `"@user.mike"`
  */
 export type AddressLike = string | number;
 

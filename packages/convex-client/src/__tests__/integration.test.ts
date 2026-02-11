@@ -12,4 +12,12 @@ describe('integration (live peer)', () => {
     expect(typeof result.value).toBe('number');
     expect(result.value).toBeGreaterThanOrEqual(0);
   });
+
+  it('should resolve CNS address @convex.core to #8', async () => {
+    const client = new Convex(PEER_URL);
+    const result = await client.query('@convex.core');
+
+    expect(result.errorCode).toBeUndefined();
+    expect(result.result).toBe('#8');
+  });
 });
