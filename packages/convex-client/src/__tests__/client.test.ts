@@ -1,5 +1,6 @@
 import { Convex } from '../convex.js';
 import { KeyPair } from '../KeyPair.js';
+import { ConvexError } from '../ConvexError.js';
 import { vi } from 'vitest';
 
 const CONVEX_PEER_URL = process.env.CONVEX_PEER_URL || 'http://peer.convex.live:8080';
@@ -57,17 +58,17 @@ describe('Convex', () => {
 
     it('should accept address as string with hash', () => {
       client.setAddress('#42');
-      expect(client.getAddress()).toBe('42');
+      expect(client.getAddress()).toBe(42);
     });
 
     it('should accept address as plain numeric string', () => {
       client.setAddress('1678');
-      expect(client.getAddress()).toBe('1678');
+      expect(client.getAddress()).toBe(1678);
     });
 
     it('should accept address as number', () => {
       client.setAddress(42);
-      expect(client.getAddress()).toBe('42');
+      expect(client.getAddress()).toBe(42);
     });
 
     it('should reject non-numeric address in setAddress', () => {
@@ -91,7 +92,7 @@ describe('Convex', () => {
         `${CONVEX_PEER_URL}/api/v1/query`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ source: '(* 2 3)', address: '12' }),
+          body: JSON.stringify({ source: '(* 2 3)', address: 12 }),
         })
       );
 
@@ -122,7 +123,7 @@ describe('Convex', () => {
       await client.query({ source: '(balance)', address: 42 });
 
       const body = JSON.parse((fetch as any).mock.calls[0][1].body);
-      expect(body.address).toBe('42');
+      expect(body.address).toBe(42);
     });
 
     it('should throw on HTTP error', async () => {
@@ -160,7 +161,7 @@ describe('Convex', () => {
         `${CONVEX_PEER_URL}/api/v1/transaction/prepare`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ address: '42', source: '(+ 1 2)' }),
+          body: JSON.stringify({ address: 42, source: '(+ 1 2)' }),
         })
       );
 
@@ -195,7 +196,7 @@ describe('Convex', () => {
         expect.objectContaining({ method: 'GET' })
       );
 
-      expect(info.address).toBe('42');
+      expect(info.address).toBe(42);
       expect(info.balance).toBe(1000000);
       expect(info.sequence).toBe(5);
       expect(info.publicKey).toBe('abcd1234');
@@ -218,7 +219,7 @@ describe('Convex', () => {
       const body = JSON.parse((fetch as any).mock.calls[0][1].body);
       expect(body.accountKey).toBe(pubKeyHex);
       expect(body.faucet).toBe(100000000);
-      expect(info.address).toBe('99');
+      expect(info.address).toBe(99);
       expect(info.balance).toBe(100000000);
     });
 
@@ -233,7 +234,101 @@ describe('Convex', () => {
       const body = JSON.parse((fetch as any).mock.calls[0][1].body);
       expect(body.accountKey).toBe(kp.publicKeyHex);
       expect(body.faucet).toBeUndefined();
-      expect(info.address).toBe('42');
+      expect(info.address).toBe(42);
+    });
+  });
+
+  describe('CVM error handling', () => {
+    it('should throw ConvexError on query with CVM error', async () => {
+      const errorResult = { errorCode: 'NOBODY', value: 'Account does not exist', info: { juice: 0 } };
+      (fetch as any).mockResolvedValueOnce(mockResponse(errorResult));
+
+      try {
+        await client.query('(balance #999999)');
+        expect.unreachable('should have thrown');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ConvexError);
+        const ce = e as ConvexError;
+        expect(ce.code).toBe('NOBODY');
+        expect(ce.result.errorCode).toBe('NOBODY');
+        expect(ce.result.info?.juice).toBe(0);
+      }
+    });
+
+    it('should throw ConvexError on transact with CVM error', async () => {
+      const kp = KeyPair.generate();
+      client.setAccount('#42', kp);
+
+      // Mock prepare response
+      (fetch as any).mockResolvedValueOnce(mockResponse({ hash: 'abc123' }));
+      // Mock submit response with error
+      const errorResult = { errorCode: 'FUNDS', value: 'Insufficient balance', info: { juice: 100, fees: 50 } };
+      (fetch as any).mockResolvedValueOnce(mockResponse(errorResult));
+
+      try {
+        await client.transact('(transfer #13 999999999)');
+        expect.unreachable('should have thrown');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ConvexError);
+        const ce = e as ConvexError;
+        expect(ce.code).toBe('FUNDS');
+        expect(ce.info?.juice).toBe(100);
+        expect(ce.info?.fees).toBe(50);
+      }
+    });
+
+    it('should pass through successful results', async () => {
+      const successResult = { value: 42, result: '42' };
+      (fetch as any).mockResolvedValueOnce(mockResponse(successResult));
+
+      const result = await client.query('(+ 1 2)');
+      expect(result.value).toBe(42);
+      expect(result.errorCode).toBeUndefined();
+    });
+  });
+
+  describe('balance', () => {
+    it('should query own balance with *balance*', async () => {
+      (fetch as any).mockResolvedValueOnce(mockResponse({ value: 1000000 }));
+
+      const result = await client.balance();
+
+      const body = JSON.parse((fetch as any).mock.calls[0][1].body);
+      expect(body.source).toBe('*balance*');
+      expect(result.value).toBe(1000000);
+    });
+
+    it('should query another address balance', async () => {
+      (fetch as any).mockResolvedValueOnce(mockResponse({ value: 500 }));
+
+      const result = await client.balance('#13');
+
+      const body = JSON.parse((fetch as any).mock.calls[0][1].body);
+      expect(body.source).toBe('(balance #13)');
+      expect(result.value).toBe(500);
+    });
+  });
+
+  describe('factory methods', () => {
+    it('should create asset handle', () => {
+      const handle = client.asset('#128');
+      expect(handle.getToken()).toBe('#128');
+    });
+
+    it('should create fungible token handle', () => {
+      const handle = client.fungible('#128');
+      expect(handle.getToken()).toBe('#128');
+    });
+
+    it('should create CNS handle', () => {
+      const handle = client.cns('convex.core');
+      expect(handle.getName()).toBe('convex.core');
+    });
+
+    it('should reject invalid CNS names', () => {
+      expect(() => client.cns('')).toThrow('Invalid CNS name');
+      expect(() => client.cns('123bad')).toThrow('Invalid CNS name');
+      expect(() => client.cns('foo) (hack')).toThrow('Invalid CNS name');
     });
   });
 

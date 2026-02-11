@@ -36,6 +36,14 @@ export type SignerLike = Signer | KeyPair;
  */
 export type AddressLike = string | number;
 
+/**
+ * Fungible token amount. Accepts:
+ * - number: `100` (safe for values up to 2^53)
+ * - bigint: `1000000000000000000n` (arbitrary precision)
+ * - string: `"1000000000000000000"` (numeric string, validated)
+ */
+export type BalanceLike = number | bigint | string;
+
 // Re-export for convenience
 export type { KeyPair } from './KeyPair.js';
 
@@ -43,7 +51,7 @@ export type { KeyPair } from './KeyPair.js';
  * Account information
  */
 export interface AccountInfo {
-  address: string;
+  address: number;
   balance: number;
   sequence: number;
   publicKey: string;

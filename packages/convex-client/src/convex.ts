@@ -2,6 +2,7 @@ import {
   ClientOptions,
   AccountInfo,
   AddressLike,
+  BalanceLike,
   Query,
   Result,
   Hex
@@ -10,42 +11,10 @@ import { KeyPair } from './KeyPair.js';
 import { Signer } from './Signer.js';
 import { KeyPairSigner } from './KeyPairSigner.js';
 import { hexToBytes, bytesToHex } from './crypto.js';
-
-/**
- * Normalize an AddressLike to canonical Convex form for CVM source:
- * - Numeric: `"#42"` (with hash prefix)
- * - CNS: `"@convex.core"` (with @ prefix)
- * @throws Error if the input is not a valid Convex address
- */
-function toAddress(input: AddressLike): string {
-  const s = String(input);
-  // CNS address: @name.path
-  if (s.startsWith('@')) {
-    if (!/^@[a-zA-Z][a-zA-Z0-9._-]*$/.test(s)) {
-      throw new Error(`Invalid CNS address: ${input}`);
-    }
-    return s;
-  }
-  // Numeric address: 42, #42, "42"
-  const num = s.replace(/^#/, '');
-  if (!/^\d+$/.test(num)) {
-    throw new Error(`Invalid Convex address: ${input}`);
-  }
-  return `#${num}`;
-}
-
-/**
- * Extract the numeric part of a Convex address for REST API calls.
- * CNS addresses are not supported here — the REST API requires numeric addresses.
- * @throws Error if the input is not a numeric Convex address
- */
-function toNumericAddress(input: AddressLike): string {
-  const s = String(input).replace(/^#/, '');
-  if (!/^\d+$/.test(s)) {
-    throw new Error(`Numeric address required (got "${input}"). CNS names must be resolved first.`);
-  }
-  return s;
-}
+import { toAddress, toNumericAddress, formatBalance, throwIfError } from './format.js';
+import { AssetHandle } from './AssetHandle.js';
+import { FungibleToken } from './FungibleToken.js';
+import { CnsHandle } from './CnsHandle.js';
 
 /**
  * Type that accepts a public key in any common form:
@@ -69,7 +38,7 @@ export class Convex {
   private readonly defaultHeaders: Record<string, string>;
   private timeout: number;
   private signer?: Signer;
-  private address?: string
+  private address?: number;
 
   /**
    * Create a new Convex instance
@@ -120,7 +89,7 @@ export class Convex {
   /**
    * Get the current account address, or undefined if not set
    */
-  getAddress(): string | undefined {
+  getAddress(): number | undefined {
     return this.address;
   }
 
@@ -161,9 +130,9 @@ export class Convex {
     });
 
     const rawAddress = data.address ?? data;
-    const address = typeof rawAddress === 'number' ? String(rawAddress) : String(rawAddress || '');
+    const address = typeof rawAddress === 'number' ? rawAddress : Number(String(rawAddress).replace(/^#/, ''));
 
-    if (!address || !/^\d+$/.test(address.replace(/^#/, ''))) {
+    if (!Number.isInteger(address) || address < 0) {
       throw new Error('Failed to create account: No valid address returned');
     }
 
@@ -171,7 +140,7 @@ export class Convex {
       : typeof data.faucet === 'number' ? data.faucet : 0;
 
     return {
-      address: address.replace(/^#/, ''),
+      address,
       balance,
       sequence: 0,
       publicKey: keyHex,
@@ -179,20 +148,34 @@ export class Convex {
   }
 
   /**
+   * Request faucet funds for an existing account (testnets only).
+   * @param address Account address to fund
+   * @param amount Amount in coppers (e.g. 100000000)
+   */
+  async faucet(address: AddressLike, amount: number): Promise<Result> {
+    const addr = toNumericAddress(address);
+    const data = await this.request<Result>('/api/v1/faucet', {
+      method: 'POST',
+      body: JSON.stringify({ address: addr, amount }),
+    });
+    return data;
+  }
+
+  /**
    * Get current account information
    */
   async getAccountInfo(): Promise<AccountInfo> {
-    if (!this.address) {
+    if (this.address == null) {
       throw new Error('No account set. Call setAccount() or setAddress() first.');
     }
 
     const data = await this.request<Record<string, unknown>>(
-      `/api/v1/accounts/${encodeURIComponent(this.address)}`,
+      `/api/v1/accounts/${this.address}`,
       { method: 'GET' }
     );
 
     return {
-      address: String(data.address ?? this.address),
+      address: typeof data.address === 'number' ? data.address : this.address,
       balance: typeof data.balance === 'number' ? data.balance : 0,
       sequence: typeof data.sequence === 'number' ? data.sequence : 0,
       publicKey: typeof data.key === 'string' ? data.key
@@ -207,7 +190,7 @@ export class Convex {
    * 3. POST /api/v1/transaction/submit   { hash, sig, accountKey }  -> result
    */
   private async submitTransaction(source: string): Promise<Result> {
-    if (!this.signer || !this.address) {
+    if (!this.signer || this.address == null) {
       throw new Error('No account set. Call setAccount() or setAddress() first.');
     }
 
@@ -236,7 +219,7 @@ export class Convex {
       body: JSON.stringify({ hash, sig: sigHex, accountKey }),
     });
 
-    return result;
+    return throwIfError(result);
   }
 
   /**
@@ -269,7 +252,8 @@ export class Convex {
   }
 
   /**
-   * Submit a transaction to the network
+   * Submit a transaction to the network.
+   * Throws ConvexError on CVM/peer errors.
    * @param source Convex Lisp code string to execute
    */
   async transact(source: string): Promise<Result> {
@@ -277,12 +261,25 @@ export class Convex {
   }
 
   /**
-   * Transfer coins to another address (convenience method)
-   * @param to Destination address (e.g., "#42", "42", or 42)
+   * Query the native CVM coin balance.
+   * Throws ConvexError on CVM/peer errors.
+   * @param holder Optional address to query (defaults to own balance)
+   */
+  async balance(holder?: AddressLike): Promise<Result> {
+    const source = holder != null
+      ? `(balance ${toAddress(holder)})`
+      : '*balance*';
+    return this.query(source);
+  }
+
+  /**
+   * Transfer native CVM coins to another address.
+   * Throws ConvexError on CVM/peer errors.
+   * @param to Destination address (e.g., "#42", "42", 42, or "@user.name")
    * @param amount Amount in coppers
    */
-  async transfer(to: AddressLike, amount: number): Promise<Result> {
-    return this.transact(`(transfer ${toAddress(to)} ${amount})`);
+  async transfer(to: AddressLike, amount: BalanceLike): Promise<Result> {
+    return this.transact(`(transfer ${toAddress(to)} ${formatBalance(amount)})`);
   }
 
   /**
@@ -311,20 +308,52 @@ export class Convex {
   }
 
   /**
-   * Execute a read-only query on the network (free, no signing required)
+   * Execute a read-only query on the network (free, no signing required).
+   * Throws ConvexError on CVM/peer errors.
    * @param query Query parameters or Convex Lisp source string
    */
   async query(query: Query | string): Promise<Result> {
     const queryParams = typeof query === 'string'
-      ? { source: query }
+      ? { source: query, ...(this.address != null && { address: this.address }) }
       : {
           source: query.source,
-          ...(query.address != null && { address: toNumericAddress(query.address) }),
+          address: query.address != null ? toNumericAddress(query.address) : this.address,
         };
 
-    return this.request<Result>('/api/v1/query', {
+    // Strip undefined address to keep payload clean
+    if (queryParams.address == null) delete queryParams.address;
+
+    const result = await this.request<Result>('/api/v1/query', {
       method: 'POST',
       body: JSON.stringify(queryParams),
     });
+
+    return throwIfError(result);
+  }
+
+  // -- Handle factories -------------------------------------------------------
+
+  /**
+   * Create a generic asset handle for any asset type.
+   * @param token Asset/token address
+   */
+  asset(token: AddressLike): AssetHandle {
+    return new AssetHandle(this, token);
+  }
+
+  /**
+   * Create a CAD29 fungible token handle.
+   * @param token Fungible token address
+   */
+  fungible(token: AddressLike): FungibleToken {
+    return new FungibleToken(this, token);
+  }
+
+  /**
+   * Create a CNS (Convex Name System) handle.
+   * @param name CNS dotted path without @ prefix (e.g. "convex.core", "user.mike")
+   */
+  cns(name: string): CnsHandle {
+    return new CnsHandle(this, name);
   }
 }

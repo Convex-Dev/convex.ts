@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-11
+
+### Added
+- **Asset Handle APIs** — fluent interface for on-chain assets:
+  - `convex.fungible('#128')` — CAD29 fungible token handle with `balance()`, `transfer()`, `mint()`, `burn()`, `supply()`, `decimals()`
+  - `convex.asset('#256')` — generic asset handle with `balance()`, `transfer()`, `offer()`, `accept()`, `supply()`
+  - `convex.cns('convex.core')` — CNS handle with `resolve()`, `set()`, `setController()`
+- **`ConvexError` class** — structured error wrapping CVM/peer errors with `.code`, `.info`, and `.result` accessors
+- **`throwIfError()`** — `query()` and `transact()` now throw `ConvexError` on CVM errors instead of returning error results silently
+- **`balance()` convenience method** — `convex.balance()` for own balance, `convex.balance('#13')` for another account
+- **`faucet()` method** — top up existing accounts on test networks without creating new ones
+- **`BalanceLike` type** — `transfer()` and fungible token methods accept `number | bigint | string` amounts
+- **Default query address** — `query()` now automatically includes the client's address when set
+- `formatBalance()` and `toAddress()` exported as public utilities
+- `AssetHandle`, `FungibleToken`, `CnsHandle` exported from package
+
+### Changed
+- **BREAKING**: `query()` and `transact()` now throw `ConvexError` on CVM errors (previously returned error results)
+- **BREAKING**: `transfer()` amount parameter changed from `number` to `BalanceLike` (`number | bigint | string`)
+- Extracted `toAddress()`, `toNumericAddress()` and other helpers to `format.ts`
+- Ed25519 sha512 initialisation consolidated to single `ed-setup.ts` module (was duplicated in `crypto.ts` and `KeyPair.ts`)
+
+### Fixed
+- String quantities in `AssetHandle.transfer()` and `offer()` are sandboxed with `(query ...)` to prevent injection
+
 ## [0.2.0] - 2026-02-11
 
 ### Breaking Changes
@@ -66,5 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - @noble/ed25519 ^2.0.0 for Ed25519 cryptography
 - @noble/hashes ^1.8.0 for cryptographic hashing
 
+[0.3.0]: https://github.com/Convex-Dev/convex.ts/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Convex-Dev/convex.ts/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Convex-Dev/convex.ts/releases/tag/v0.1.0

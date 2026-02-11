@@ -6,9 +6,21 @@ export { KeyPair } from './KeyPair.js';
 export { type Signer } from './Signer.js';
 export { KeyPairSigner } from './KeyPairSigner.js';
 
+// Handle APIs
+export { AssetHandle } from './AssetHandle.js';
+export { FungibleToken } from './FungibleToken.js';
+export { CnsHandle } from './CnsHandle.js';
+
+// Error handling
+export { ConvexError } from './ConvexError.js';
+
+// Formatting utilities
+export { toAddress, toNumericAddress, formatBalance, throwIfError } from './format.js';
+
 // Types
 export type {
   AddressLike,
+  BalanceLike,
   ClientOptions,
   Hex,
   AccountInfo,

@@ -1,6 +1,4 @@
-import * as ed from '@noble/ed25519';
-import { sha512 } from '@noble/hashes/sha2.js';
-ed.etc.sha512Sync = (data: Uint8Array): Uint8Array => sha512(data);
+import { ed } from './ed-setup.js';
 import { type Hex } from './types.js';
 
 type Bytes = Uint8Array;

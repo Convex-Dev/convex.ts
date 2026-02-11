@@ -1,6 +1,6 @@
 {
   "name": "@convex-world/convex-ts",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "TypeScript/JavaScript client library for the Convex decentralized lattice network",
   "type": "module",
   "main": "dist/index.js",
