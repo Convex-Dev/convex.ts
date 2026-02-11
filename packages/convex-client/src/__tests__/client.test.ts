@@ -1,70 +1,112 @@
 import { Convex } from '../convex.js';
-import axios from 'axios';
 import { vi } from 'vitest';
-import type { Mock } from 'vitest';
-
-vi.mock('axios', () => ({
-  create: vi.fn(),
-  default: vi.fn(),
-  isAxiosError: vi.fn()
-}));
-
-const mockedAxios = axios as any;
-
-// Create a mock AxiosInstance, as returned by mocked axios.create()
-const mockAxiosInstance = {
-  post: vi.fn(),
-  get: vi.fn(),
-  defaults: { timeout: 30000 }
-} as any;
 
 const CONVEX_PEER_URL = process.env.CONVEX_PEER_URL || 'http://peer.convex.live:8080';
+
+/**
+ * Helper to create a mock Response object for fetch.
+ */
+function mockResponse(data: any, ok = true, status = 200): Response {
+  return {
+    ok,
+    status,
+    json: () => Promise.resolve(data),
+  } as Response;
+}
 
 describe('Convex', () => {
   let client: Convex;
 
   beforeEach(() => {
-    // Reset mocks for each test
-    mockAxiosInstance.post.mockReset();
-    mockAxiosInstance.get.mockReset();
-
-    // Make axios.create() return our mock AxiosInstance
-    const mockCreate = vi.fn().mockReturnValue(mockAxiosInstance);
-    (axios as any).create = mockCreate;
+    vi.stubGlobal('fetch', vi.fn());
     client = new Convex(CONVEX_PEER_URL);
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('query', () => {
-    it('should execute a query', async () => {
-      const mockResponse = {
-        data: {
-          // As per your Result type in types.ts, the query result is directly in response.data
-          value: "mocked query result"
-        }
-      };
-
-      // Now mock the post method on the instance
-      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+    it('should execute a query with object params', async () => {
+      const queryResult = { value: 'mocked query result' };
+      (fetch as any).mockResolvedValueOnce(mockResponse(queryResult));
 
       const result = await client.query({
         address: '#12',
         source: '(* 2 3)'
       });
 
-      // Expect post to be called on the instance
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/v1/query', {
-        address: '#12',
-        source: '(* 2 3)'
-      });
-      // The assertion for the call body in your original test was different from the actual call,
-      // I've updated it to match the actual parameters used in client.query().
-      // If you expect a different body, please adjust the test or the call.
+      expect(fetch).toHaveBeenCalledWith(
+        `${CONVEX_PEER_URL}/api/v1/query`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ address: '#12', source: '(* 2 3)' }),
+        })
+      );
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(queryResult);
+    });
+
+    it('should execute a query with string shorthand', async () => {
+      const queryResult = { value: 42 };
+      (fetch as any).mockResolvedValueOnce(mockResponse(queryResult));
+
+      const result = await client.query('*timestamp*');
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${CONVEX_PEER_URL}/api/v1/query`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ source: '*timestamp*' }),
+        })
+      );
+
+      expect(result).toEqual(queryResult);
+    });
+
+    it('should throw on HTTP error', async () => {
+      (fetch as any).mockResolvedValueOnce(
+        mockResponse({ error: 'Bad request' }, false, 400)
+      );
+
+      await expect(client.query('bad')).rejects.toThrow('Convex API Error: Bad request');
     });
   });
-}); 
+
+  describe('getAccountInfo', () => {
+    it('should fetch account info', async () => {
+      client.setAddress('#42');
+
+      const accountData = {
+        address: '42',
+        balance: 1000000,
+        sequence: 5,
+        key: 'abcd1234',
+      };
+      (fetch as any).mockResolvedValueOnce(mockResponse(accountData));
+
+      const info = await client.getAccountInfo();
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${CONVEX_PEER_URL}/api/v1/accounts/42`,
+        expect.objectContaining({ method: 'GET' })
+      );
+
+      expect(info.address).toBe('42');
+      expect(info.balance).toBe(1000000);
+      expect(info.sequence).toBe(5);
+      expect(info.publicKey).toBe('abcd1234');
+    });
+
+    it('should throw if no address set', async () => {
+      await expect(client.getAccountInfo()).rejects.toThrow('No account set');
+    });
+  });
+
+  describe('setTimeout', () => {
+    it('should update the timeout', () => {
+      // Just verify it doesn't throw
+      client.setTimeout(5000);
+    });
+  });
+});

@@ -52,10 +52,11 @@ export interface Transaction {
  * Transaction result
  */
 export interface TransactionResult {
-  hash: string;
-  status: 'success' | 'error';
+  value?: any;
+  result?: string;
+  errorCode?: string;
   error?: string;
-  result?: any;
+  info?: { juice?: number; source?: string };
 }
 
 /**
@@ -70,7 +71,7 @@ export interface Query {
  * Query result
  */
 export interface Result {
-  value: string;
+  value?: any;
   errorCode?: string;
   info?: any;
-} 
+}
