@@ -1,3 +1,6 @@
+import type { KeyPair } from './KeyPair.js';
+import type { Signer } from './Signer.js';
+
 /**
  * Client configuration options
  */
@@ -8,21 +11,21 @@ export interface ClientOptions {
   headers?: Record<string, string>;
 }
 
-export type Address = Uint8Array;
-
 /**
  * Type that accepts either bytes or hex string
  */
 export type Hex = Uint8Array | string;
 
 /**
- * Ed25519 key pair (legacy interface, use KeyPair class instead)
- * @deprecated Use KeyPair class from './KeyPair.js'
+ * Type that accepts a public key in any common form:
+ * hex string, raw bytes, or a KeyPair (from which only the public key is used).
  */
-export interface IKeyPair {
-  privateKey: Uint8Array;
-  publicKey: Uint8Array;
-}
+export type AccountKey = Hex | KeyPair;
+
+/**
+ * Type that accepts Signer or KeyPair class
+ */
+export type SignerLike = Signer | KeyPair;
 
 // Re-export for convenience
 export type { KeyPair } from './KeyPair.js';
@@ -35,17 +38,6 @@ export interface AccountInfo {
   balance: number;
   sequence: number;
   publicKey: string;
-}
-
-/**
- * Transaction parameters
- */
-export interface Transaction {
-  from?: string;
-  to?: string;
-  amount?: number;
-  sequence?: number;
-  data?: any;
 }
 
 /**
@@ -75,10 +67,10 @@ export interface ResultInfo {
  * Result returned by queries and transactions.
  *
  * Mirrors the JSON representation of convex.core.Result:
- * - `value`     — JSON-converted CVM value (may lose type information)
- * - `result`    — CVM printed representation (string, more accurate than value)
- * - `errorCode` — Error keyword string (e.g. "NOBODY"), absent on success
- * - `info`      — Execution metadata (juice, fees, mem, trace, etc.)
+ * - `value`     - JSON-converted CVM value (may lose type information)
+ * - `result`    - CVM printed representation (string, more accurate than value)
+ * - `errorCode` - Error keyword string (e.g. "NOBODY"), absent on success
+ * - `info`      - Execution metadata (juice, fees, mem, trace, etc.)
  */
 export interface Result {
   /** JSON-converted CVM value. Numbers, strings, booleans map directly; other types may lose fidelity. */
@@ -92,15 +84,11 @@ export interface Result {
 }
 
 /**
- * Transaction result. Same shape as Result — transactions and queries
- * return the same JSON structure from the peer REST API.
- */
-export type TransactionResult = Result;
-
-/**
- * Query parameters
+ * Query parameters for read-only queries.
  */
 export interface Query {
+  /** Convex Lisp source code to execute */
+  source: string;
+  /** Optional account address to query from (e.g. "#42" or "42") */
   address?: string;
-  source?: any;
 }

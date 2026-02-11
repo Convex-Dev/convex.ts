@@ -1,11 +1,11 @@
 import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 ed.etc.sha512Sync = (data: Uint8Array): Uint8Array => sha512(data);
-import { type IKeyPair, type Hex } from './types.js';
+import { type Hex } from './types.js';
 
 type Bytes = Uint8Array;
 
-/** Helper function to convert Uint8Array to hex string */ 
+/** Helper function to convert Uint8Array to hex string */
 export function bytesToHex(bytes: Bytes): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -39,37 +39,6 @@ export function hexToBytes(input: Hex): Uint8Array {
 }
 
 /**
- * Generate a new Ed25519 key pair
- * @deprecated Use KeyPair.generate() instead
- */
-export function generateKeyPair(): IKeyPair {
-  const seed = ed.utils.randomPrivateKey();
-  const publicKey = ed.getPublicKey(seed);
-
-  return {
-    privateKey: seed,
-    publicKey
-  };
-}
-
-/**
- * Generate an Ed25519 key pair from a seed
- * @deprecated Use KeyPair.fromSeed() instead
- */
-export function generateKeyPairFromSeed(seed: Uint8Array): IKeyPair {
-  if (seed.length !== 32) {
-    throw new Error('Seed must be exactly 32 bytes');
-  }
-
-  const publicKey = ed.getPublicKey(seed);
-
-  return {
-    privateKey: seed,
-    publicKey
-  };
-}
-
-/** 
  * Sign a message with a private key
  * @param message Message to sign
  * @param privateKey Private key as Uint8Array
@@ -94,6 +63,6 @@ export async function verify(
   const signatureBytes = hexToBytes(signature);
   const messageBytes = hexToBytes(message);
   const publicBytes = hexToBytes(publicKey);
-  
+
   return await ed.verify(signatureBytes, messageBytes, publicBytes);
 }

@@ -2,7 +2,7 @@ import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
-import { generateKeyPair, sign, verify, hexToBytes, bytesToHex } from '../crypto.js';
+import { sign, verify, hexToBytes, bytesToHex } from '../crypto.js';
 
 describe('Ed25519 test vector', () => {
   it('verifies a known signature for a known key and message', async () => {

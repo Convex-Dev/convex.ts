@@ -1,4 +1,4 @@
-export type Hex = Uint8Array | string;
+import type { Hex } from './types.js';
 
 /**
  * Abstract signer interface for signing Convex transactions

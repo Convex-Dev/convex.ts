@@ -1,8 +1,6 @@
 import {
   ClientOptions,
   AccountInfo,
-  Transaction,
-  TransactionResult,
   Query,
   Result,
   Hex
@@ -10,12 +8,18 @@ import {
 import { KeyPair } from './KeyPair.js';
 import { Signer } from './Signer.js';
 import { KeyPairSigner } from './KeyPairSigner.js';
-import { sign, hexToBytes, bytesToHex } from './crypto.js';
+import { hexToBytes, bytesToHex } from './crypto.js';
+
+/**
+ * Type that accepts a public key in any common form:
+ * hex string, raw bytes, or a KeyPair (from which only the public key is used).
+ */
+export type AccountKey = Hex | KeyPair;
 
 /**
  * Type that accepts Signer or KeyPair class
  */
-type SignerLike = Signer | KeyPair;
+export type SignerLike = Signer | KeyPair;
 
 /**
  * Main class for interacting with the Convex network.
@@ -70,19 +74,44 @@ export class Convex {
   }
 
   /**
+   * Get the peer URL this client is connected to
+   */
+  getPeerUrl(): string {
+    return this.peerUrl;
+  }
+
+  /**
+   * Get the current account address, or undefined if not set
+   */
+  getAddress(): string | undefined {
+    return this.address;
+  }
+
+  /**
+   * Check whether this client has both an address and signer set
+   * (i.e. is ready to submit transactions)
+   */
+  hasAccount(): boolean {
+    return this.address !== undefined && this.signer !== undefined;
+  }
+
+  /**
    * Create a new account on the network with the given public key.
    *
    * This is a network operation only — it does not change the client's
    * signer or address. Call setAccount() afterwards if you want to use
    * the new account for transactions.
    *
-   * @param accountKey Ed25519 public key for the new account (hex string or Uint8Array)
+   * @param accountKey Ed25519 public key — hex string, Uint8Array, or KeyPair
+   *                   (only the public key is sent to the network)
    * @param faucet Optional faucet amount in coppers (e.g. 100000000 for 0.1 CVM)
    */
-  async createAccount(accountKey: Hex, faucet?: number): Promise<AccountInfo> {
-    const keyHex = typeof accountKey === 'string'
-      ? accountKey.replace(/^0x/i, '')
-      : bytesToHex(accountKey);
+  async createAccount(accountKey: AccountKey, faucet?: number): Promise<AccountInfo> {
+    const keyHex = accountKey instanceof KeyPair
+      ? accountKey.publicKeyHex
+      : typeof accountKey === 'string'
+        ? accountKey.replace(/^0x/i, '')
+        : bytesToHex(accountKey);
 
     const body: Record<string, unknown> = { accountKey: keyHex };
     if (faucet != null) {
@@ -136,17 +165,16 @@ export class Convex {
 
   /**
    * Submit a transaction using the two-step prepare/submit flow:
-   * 1. POST /api/v1/transaction/prepare  { address, source }  → { hash }
+   * 1. POST /api/v1/transaction/prepare  { address, source }  -> { hash }
    * 2. Sign the hash with Ed25519
-   * 3. POST /api/v1/transaction/submit   { hash, sig, accountKey }  → result
+   * 3. POST /api/v1/transaction/submit   { hash, sig, accountKey }  -> result
    */
-  async submitTransaction(tx: Transaction): Promise<TransactionResult> {
+  private async submitTransaction(source: string): Promise<Result> {
     if (!this.signer || !this.address) {
       throw new Error('No account set. Call setAccount() or setAddress() first.');
     }
 
     // Step 1: Prepare — get the transaction hash
-    const source = tx.data?.code ?? JSON.stringify(tx);
     const prepareData = await this.request<Record<string, unknown>>('/api/v1/transaction/prepare', {
       method: 'POST',
       body: JSON.stringify({ address: this.address, source }),
@@ -166,7 +194,7 @@ export class Convex {
     const accountKey = bytesToHex(this.signer.getPublicKey());
 
     // Step 3: Submit the signed transaction
-    const result = await this.request<TransactionResult>('/api/v1/transaction/submit', {
+    const result = await this.request<Result>('/api/v1/transaction/submit', {
       method: 'POST',
       body: JSON.stringify({ hash, sig: sigHex, accountKey }),
     });
@@ -204,23 +232,18 @@ export class Convex {
 
   /**
    * Submit a transaction to the network
-   * @param tx Transaction details or Convex Lisp code string
+   * @param source Convex Lisp code string to execute
    */
-  async transact(tx: Transaction | string): Promise<TransactionResult> {
-    if (typeof tx === 'string') {
-      return this.submitTransaction({
-        data: { code: tx }
-      });
-    }
-    return this.submitTransaction(tx);
+  async transact(source: string): Promise<Result> {
+    return this.submitTransaction(source);
   }
 
   /**
    * Transfer coins to another address (convenience method)
-   * @param to Destination address
+   * @param to Destination address (e.g., "#42" or "42")
    * @param amount Amount in coppers
    */
-  async transfer(to: string, amount: number): Promise<TransactionResult> {
+  async transfer(to: string, amount: number): Promise<Result> {
     return this.transact(`(transfer ${to} ${amount})`);
   }
 
@@ -243,28 +266,10 @@ export class Convex {
 
   /**
    * Get the current signer
-   * @returns Signer instance
+   * @returns Signer instance, or undefined if not set
    */
-  getSigner(): Signer {
-    if (!this.signer) {
-      throw new Error('No signer set');
-    }
+  getSigner(): Signer | undefined {
     return this.signer;
-  }
-
-  /**
-   * Get the current key pair (only works if using KeyPairSigner)
-   * @returns KeyPair instance
-   * @deprecated Use getSigner() instead for more flexibility
-   */
-  getKeyPair(): KeyPair {
-    if (!this.signer) {
-      throw new Error('No signer set');
-    }
-    if (!(this.signer instanceof KeyPairSigner)) {
-      throw new Error('Current signer is not a KeyPairSigner. Use getSigner() instead.');
-    }
-    return this.signer.getKeyPair();
   }
 
   /**

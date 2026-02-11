@@ -1,13 +1,14 @@
 import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha512';
 
-import { generateKeyPair, sign, verify, hexToBytes, bytesToHex } from '../crypto.js';
+import { sign, verify, hexToBytes, bytesToHex } from '../crypto.js';
+import { KeyPair } from '../KeyPair.js';
 import { sha512 as sha512_noble } from '@noble/hashes/sha2.js';
 ed.etc.sha512Sync = (...m) => sha512_noble(ed.etc.concatBytes(...m));
 
 describe('crypto', () => {
-  it('generates a valid key pair', async () => {
-    const keyPair = await generateKeyPair();
+  it('generates a valid key pair', () => {
+    const keyPair = KeyPair.generate();
     expect(keyPair.privateKey).toBeInstanceOf(Uint8Array);
     expect(keyPair.publicKey).toBeInstanceOf(Uint8Array);
     expect(keyPair.privateKey.length).toBe(32);
@@ -15,7 +16,7 @@ describe('crypto', () => {
   });
 
   it('signs and verifies a message (round-trip)', async () => {
-    const keyPair = await generateKeyPair();
+    const keyPair = KeyPair.generate();
     const message = 'cafebabe';
     const signature = await sign(message, keyPair.privateKey);
     const isValid = await verify(message, signature, keyPair.publicKey);
@@ -23,8 +24,8 @@ describe('crypto', () => {
   });
 
   it('fails verification with wrong public key', async () => {
-    const keyPair1 = await generateKeyPair();
-    const keyPair2 = await generateKeyPair();
+    const keyPair1 = KeyPair.generate();
+    const keyPair2 = KeyPair.generate();
     const message = 'deadbeef00';
     const signature = await sign(message, keyPair1.privateKey);
     const isValid = await verify(message, signature, keyPair2.publicKey);
@@ -32,7 +33,7 @@ describe('crypto', () => {
   });
 
   it('fails verification with tampered message', async () => {
-    const keyPair = await generateKeyPair();
+    const keyPair = KeyPair.generate();
     const message = '78aa';
     const signature = await sign(message, keyPair.privateKey);
     const isValid = await verify('78ab', signature, keyPair.publicKey);
@@ -40,12 +41,12 @@ describe('crypto', () => {
   });
 
   it('fails verification with tampered signature', async () => {
-    const keyPair = await generateKeyPair();
+    const keyPair = KeyPair.generate();
     const message = '12345678';
     const signature = await sign(message, keyPair.privateKey);
-    // Tamper with the signature (flip a hex digit)
+    // Tamper with the signature (flip a byte)
     let tamperedSig = new Uint8Array(signature);
-    tamperedSig[0] = 255-tamperedSig[0]; // Flip the first byte
+    tamperedSig[0] = 255-tamperedSig[0];
     const isValid = await verify(message, tamperedSig, keyPair.publicKey);
     expect(isValid).toBe(false);
   });
@@ -93,4 +94,4 @@ describe('bytesToHex', () => {
 
 test('dummy test to ensure suite runs', () => {
   expect(true).toBe(true);
-}); 
+});

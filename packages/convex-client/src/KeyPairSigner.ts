@@ -1,4 +1,5 @@
-import { Signer, type Hex } from './Signer.js';
+import type { Signer } from './Signer.js';
+import type { Hex } from './types.js';
 import { KeyPair } from './KeyPair.js';
 import { sign, hexToBytes, bytesToHex } from './crypto.js';
 
