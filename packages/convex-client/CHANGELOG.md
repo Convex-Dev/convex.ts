@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`AccountHandle`** — fluent handle for account queries and management via `convex.account('#13')` (or `convex.account('@user.mike')`). Read methods: `balance()`, `getSequence()`, `getController()`, `getKey()`. Write methods: `setController()`, `setKey()` — automatically dispatch directly when the client is the account (key authority) or via `eval-as` when the client is the controller.
+- **`MemoryKeyStore`** — in-memory `KeyStore` implementation for tests, CLI tools, and short-lived server processes. Complements the existing `LocalStorageKeyStore`.
+
+### Fixed
+- **README correctness pass** — documentation drift introduced since 0.2.0:
+  - `createAccount()` example corrected: the method takes an `accountKey` (required) + optional faucet amount; it does not generate its own key pair.
+  - `verify()` example corrected: the real argument order is `(message, signature, publicKey)`.
+  - `TypeScript Support` import example no longer references `Transaction` / `TransactionResult`, which have never been exported.
+  - `Error Handling` section rewritten to show the 0.3.0 `ConvexError` try/catch pattern (CVM errors now throw, they do not return an error result).
+
+### Removed
+- **`TYPE-EXPORTS.md`** — stale design doc describing a pre-0.2 type layout that referenced a long-removed `IKeyPair` interface. Nothing in the repo linked to it.
+
 ## [0.3.0] - 2026-02-11
 
 ### Added

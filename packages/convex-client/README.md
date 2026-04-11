@@ -59,17 +59,24 @@ if (!result.errorCode) {
 ### Creating a New Account
 
 ```typescript
-import { Convex } from '@convex-world/convex-ts';
+import { Convex, KeyPair } from '@convex-world/convex-ts';
 
 const convex = new Convex('https://peer.convex.live');
 
-// Creates a new account with a generated key pair
-// Optional: request faucet funds (in coppers)
-const account = await convex.createAccount(100_000_000);
+// Generate a fresh Ed25519 key pair (save the seed if you want to reuse
+// this account later — KeyPair.generate() is not deterministic)
+const keyPair = KeyPair.generate();
+
+// Create the account on the network. The second argument is an optional
+// faucet amount in coppers (test networks only).
+const account = await convex.createAccount(keyPair, 100_000_000);
 
 console.log('Address:', account.address);
 console.log('Public key:', account.publicKey);
 console.log('Balance:', account.balance);
+
+// Wire the new account up for signing
+convex.setAccount(account.address, keyPair);
 ```
 
 ## API Reference
@@ -229,8 +236,8 @@ import { sign, verify, hexToBytes } from '@convex-world/convex-ts';
 const message = new Uint8Array([1, 2, 3]);
 const signature = await sign(message, keyPair.privateKey);
 
-// Verify
-const valid = await verify(signature, message, keyPair.publicKey);
+// Verify — argument order is (message, signature, publicKey)
+const valid = await verify(message, signature, keyPair.publicKey);
 ```
 
 ### Encrypted Key Storage (Browser)
@@ -282,31 +289,41 @@ Full type definitions are included:
 import type {
   ClientOptions,
   AccountInfo,
-  Transaction,
   Result,
-  TransactionResult,
   ResultInfo,
   Query,
+  AddressLike,
+  BalanceLike,
+  Hex,
 } from '@convex-world/convex-ts';
 ```
 
-`TransactionResult` is a type alias for `Result` — both queries and transactions return the same JSON structure from the peer API.
+Both `query()` and `transact()` return a `Result` — the same JSON structure
+the peer API emits for queries and transactions alike.
 
 ## Error Handling
 
+Since 0.3.0, `query()` and `transact()` throw a `ConvexError` on CVM-level
+failures (e.g. insufficient funds, syntax errors, asserts). Network and
+HTTP failures surface as ordinary `Error`s from `fetch`. A single
+`try/catch` handles both:
+
 ```typescript
+import { Convex, ConvexError } from '@convex-world/convex-ts';
+
 try {
   const result = await convex.transact('(transfer #456 1000000000)');
-
-  if (result.errorCode) {
-    // CVM-level error (e.g. insufficient funds)
-    console.error('CVM error:', result.errorCode, result.value);
-  } else {
-    console.log('Success:', result.result);
-  }
+  console.log('Success:', result.result);
+  console.log('Juice used:', result.info?.juice);
 } catch (error) {
-  // Network/HTTP error
-  console.error('Request failed:', error);
+  if (error instanceof ConvexError) {
+    // CVM-level error — structured access to code, info and the raw Result
+    console.error('CVM error:', error.code, error.message);
+    console.error('Juice used:', error.info?.juice);
+  } else {
+    // Network/HTTP failure from fetch
+    console.error('Request failed:', error);
+  }
 }
 ```
 
