@@ -1,14 +1,8 @@
 import React from "react";
-import Head from "next/head";
 import SquidWallet from "../components/SquidWallet";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function SquidsWalletPage() {
-  return (
-    <>
-      <Head>
-        <title>Squids Wallet - Kids Currency</title>
-      </Head> 
-      <SquidWallet />
-    </>
-  );
-} 
+  useDocumentTitle("Squids Wallet - Kids Currency");
+  return <SquidWallet />;
+}

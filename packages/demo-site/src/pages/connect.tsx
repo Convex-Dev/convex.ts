@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import Head from "next/head";
 import Button from "../components/Button";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function ConnectWalletPage() {
+  useDocumentTitle("Connect Wallet - Convex");
   const [accountInput, setAccountInput] = useState<string>("");
   const [isValid, setIsValid] = useState(false);
 
@@ -19,9 +20,6 @@ export default function ConnectWalletPage() {
 
   return (
     <>
-      <Head>
-        <title>Connect Wallet - Convex</title>
-      </Head>
       <div className="container">
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <header className="text-center mb-8">

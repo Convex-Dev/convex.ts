@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import Head from "next/head";
 import { NetworkSelector, NetworkConfig } from "@convex-world/convex-react";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function NetworkDiscoveryPage() {
+  useDocumentTitle("Network Discovery - Convex");
   const [selected, setSelected] = useState<NetworkConfig | null>(null);
 
   return (
     <>
-      <Head>
-        <title>Network Discovery - Convex</title>
-      </Head>
       <div className="container">
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           {/* Header */}

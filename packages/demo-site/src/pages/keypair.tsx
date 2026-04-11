@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import Head from "next/head";
 import { Identicon } from "@convex-world/convex-react";
 import { bytesToHex, hexToBytes, LocalStorageKeyStore, KeyPair } from "@convex-world/convex-ts";
 import Button from "../components/Button";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function KeyPairGeneratorPage() {
+  useDocumentTitle("Keyring - Convex");
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -216,9 +217,6 @@ export default function KeyPairGeneratorPage() {
 
   return (
     <>
-      <Head>
-        <title>Keyring - Convex</title>
-      </Head>
       <div className="container">
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           {pwModalAlias && (

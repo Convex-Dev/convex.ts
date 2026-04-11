@@ -9,7 +9,7 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         {/* Header */}
         <header className="text-center mb-8">
-          <h1 className="mb-4">Convex Crypto Demo</h1>
+          <h1 className="mb-4">Convex TypeScript Tools Demo</h1>
           <p className="text-secondary text-lg max-w-2xl">
             Experience the power of the Convex DLT network with our TypeScript client library.
             Generate cryptographic key pairs and explore blockchain functionality.

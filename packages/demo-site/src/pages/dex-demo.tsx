@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import Head from "next/head";
-import { useRouter } from "next/router";
+import { useSearchParams } from "react-router-dom";
 import Button from "../components/Button";
 import { NetworkSelector, NetworkConfig, Identicon } from "@convex-world/convex-react";
 import { LocalStorageKeyStore, bytesToHex, Convex } from "@convex-world/convex-ts";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function DexDemoPage() {
+  useDocumentTitle("DEX Demo - Convex");
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkConfig | null>(null);
   const [ks, setKs] = useState<LocalStorageKeyStore | null>(null);
   const [aliases, setAliases] = useState<string[]>([]);
@@ -16,7 +17,7 @@ export default function DexDemoPage() {
   const [selectedAccount, setSelectedAccount] = useState<number | null>(null);
   const [showRecentAccounts, setShowRecentAccounts] = useState(false);
   const recentDropdownRef = useRef<HTMLDivElement | null>(null);
-  const router = useRouter();
+  const [searchParams] = useSearchParams();
   const [cvxBalance, setCvxBalance] = useState<string | null>(null);
   const [cvxLoading, setCvxLoading] = useState(false);
   const [cvxError, setCvxError] = useState<string | null>(null);
@@ -55,9 +56,8 @@ export default function DexDemoPage() {
 
   // Prefill from query param (?account=123)
   useEffect(() => {
-    if (!router.isReady) return;
-    const acct = router.query.account;
-    if (typeof acct === 'string') {
+    const acct = searchParams.get('account');
+    if (acct) {
       const n = parseInt(acct, 10);
       if (!isNaN(n)) {
         setSelectedAccount(n);
@@ -65,7 +65,7 @@ export default function DexDemoPage() {
         addAccountToHistory(n);
       }
     }
-  }, [router.isReady, router.query.account]);
+  }, [searchParams]);
 
   // Fetch CVM balance for selected account on selected network
   useEffect(() => {
@@ -109,9 +109,6 @@ export default function DexDemoPage() {
 
   return (
     <>
-      <Head>
-        <title>DEX Demo - Convex</title>
-      </Head>
       <div className="container">
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <header className="text-center mb-8">
