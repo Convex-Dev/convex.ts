@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `verify()` example corrected: the real argument order is `(message, signature, publicKey)`.
   - `TypeScript Support` import example no longer references `Transaction` / `TransactionResult`, which have never been exported.
   - `Error Handling` section rewritten to show the 0.3.0 `ConvexError` try/catch pattern (CVM errors now throw, they do not return an error result).
+  - "Using an Existing Account" quick-start example updated to the 0.3.0 throw-on-error model (dropped the dead `if (!result.errorCode)` branch).
+  - Documented the account / fungible / asset / CNS handles and the `MemoryKeyStore` in the README (previously only `LocalStorageKeyStore` was covered).
 
 ### Removed
 - **`TYPE-EXPORTS.md`** — stale design doc describing a pre-0.2 type layout that referenced a long-removed `IKeyPair` interface. Nothing in the repo linked to it.

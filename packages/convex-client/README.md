@@ -45,15 +45,12 @@ const keyPair = KeyPair.fromSeed('your-64-char-hex-seed...');
 // Set your account address and key pair
 convex.setAccount('#1678', keyPair);
 
-// Submit a transaction (Convex Lisp code)
+// Submit a transaction (Convex Lisp code).
+// transact() throws a ConvexError on CVM failure — see Error Handling below.
 const result = await convex.transact('(transfer #456 1000000000)');
 
-if (!result.errorCode) {
-  console.log('Success! Result:', result.result);
-  console.log('Juice used:', result.info?.juice);
-} else {
-  console.error('Error:', result.errorCode, result.value);
-}
+console.log('Success! Result:', result.result);
+console.log('Juice used:', result.info?.juice);
 ```
 
 ### Creating a New Account
@@ -154,6 +151,46 @@ Transactions use a two-step prepare/submit flow internally:
 1. `POST /api/v1/transaction/prepare` - get a hash for the transaction
 2. Sign the hash with Ed25519
 3. `POST /api/v1/transaction/submit` - submit with signature
+
+### Handles — Accounts, Tokens, Assets & CNS
+
+Fluent wrappers over common Convex Lisp idioms. Handle creation is instant and
+local (no network call); every method returns a `Result` and throws `ConvexError`
+on a CVM error, exactly like `query()` / `transact()`.
+
+```typescript
+// Account handle — query and manage an account
+const acct = convex.account('#13');        // or convex.account('@user.mike')
+await acct.balance();
+await acct.getSequence();
+await acct.getController();
+await acct.getKey();
+await acct.setController('#42');            // null to remove; needs key or controller authority
+await acct.setKey('0xabc...');             // Ed25519 public key as hex
+
+// Fungible token handle (CAD29)
+const token = convex.fungible('#128');
+await token.balance();                     // own balance; pass a holder for another account
+await token.transfer('#456', 1000);
+await token.mint(1_000_000);
+await token.burn(500);
+await token.supply();
+await token.decimals();
+
+// Generic asset handle
+const asset = convex.asset('#256');
+await asset.balance('#13');
+await asset.transfer('#456', 10);
+await asset.offer('#456', 10);
+await asset.accept('#456', 10);
+await asset.supply();
+
+// CNS (Convex Name System) handle
+const cns = convex.cns('convex.core');     // dotted path, no @ prefix
+await cns.resolve();
+await cns.set('#13');
+await cns.setController('#42');
+```
 
 ### Account Setup
 
@@ -268,6 +305,25 @@ const aliases = await keystore.listAliases();
 
 // Get public key without password
 const pubKey = keystore.getPublicKey('my-account');
+```
+
+### In-Memory Key Storage (Node / CLI / SSR)
+
+`MemoryKeyStore` mirrors the `LocalStorageKeyStore` API but holds everything in
+memory — for Node.js, CLI tools, tests, and server-side rendering. Keys are lost
+when the process exits. Requires the Web Crypto API (Node.js 18+, Deno, Bun, or a
+browser).
+
+```typescript
+import { MemoryKeyStore, KeyPair } from '@convex-world/convex-ts';
+
+const keystore = new MemoryKeyStore();
+await keystore.storeKeyPair('my-account', KeyPair.generate(), 'my-password');
+
+const restored = await keystore.getKeyPair('my-account', 'my-password');
+await keystore.unlock('my-account', 'my-password');
+const unlocked = keystore.getUnlockedKeyPair('my-account');
+keystore.lock('my-account');
 ```
 
 ### Identicons

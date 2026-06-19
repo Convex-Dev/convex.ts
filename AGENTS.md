@@ -19,7 +19,7 @@ convex.ts/
 ├── packages/
 │   ├── convex-client/        # Main TypeScript client (@convex-world/convex-ts)
 │   ├── convex-react/         # React hooks and components
-│   └── demo-site/            # Next.js demo application
+│   └── demo-site/            # Vite + React demo application
 ├── CLAUDE.md                 # This file
 ├── README.md                 # User-facing documentation
 ├── DEPLOY.md                 # Publishing guide
@@ -42,12 +42,12 @@ convex.ts/
 - **TypeScript 5.x** - Type-safe development
 - **pnpm** - Fast, disk-efficient package manager with workspace support
 - **Node.js 18+** - Runtime environment
-- **axios** - HTTP client for peer communication
+- **fetch** - Native HTTP client for peer communication (no axios dependency)
 - **@noble/ed25519** - Ed25519 cryptographic signatures
 - **@noble/hashes** - Cryptographic hashing
-- **Jest** - Testing framework
-- **Next.js 16** - Demo site framework (demo-site package)
-- **React 18/19** - UI library (convex-react, demo-site)
+- **Vitest** - Testing framework
+- **Vite** - Demo site build tool (demo-site package)
+- **React 19** - UI library (convex-react, demo-site)
 
 ---
 
@@ -171,14 +171,14 @@ src/
 ├── crypto.ts         # Cryptographic utilities
 ├── keystore.ts       # Key management
 ├── identicon.ts      # Address identicons
-└── __tests__/        # Jest tests (excluded from build)
+└── __tests__/        # Vitest tests (excluded from build)
 ```
 
 #### Key Conventions
 
 - **Immutable by default** - Never mutate parameters or internal state
 - **Async/await** - All network operations are async
-- **Error handling** - Throw descriptive errors, wrap axios errors
+- **Error handling** - Throw descriptive errors, wrap fetch errors
 - **TypeScript strict mode** - All code must pass strict type checking
 - **ESM only** - Use `.js` extensions in imports (NodeNext module resolution)
 
@@ -257,12 +257,11 @@ pnpm dev
 
 ```typescript
 // External dependencies first
-import axios from 'axios';
 import { sha256 } from '@noble/hashes/sha256';
 
 // Internal imports with .js extension
-import { KeyPair } from './types.js';
-import { generateKeyPair } from './crypto.js';
+import { KeyPair } from './KeyPair.js';
+import { sign } from './crypto.js';
 ```
 
 ---
@@ -340,7 +339,7 @@ pnpm test --verbose
 pnpm test client.test
 
 # Run with Node debugging
-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand
+node --inspect-brk ./node_modules/vitest/vitest.mjs run
 ```
 
 ---
